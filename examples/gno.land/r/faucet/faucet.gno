@@ -1,6 +1,8 @@
 package faucet
 
 import (
+	"std"
+
 	"gno.land/r/users"
 )
 
