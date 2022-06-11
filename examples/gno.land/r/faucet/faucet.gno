@@ -3,6 +3,7 @@ package faucet
 import (
 	"std"
 
+	"gno.land/p/avl"
 	"gno.land/p/ufmt"
 	"gno.land/r/users"
 )
@@ -10,6 +11,7 @@ import (
 var (
 	totalRewarded = std.Coin{"gnot", 0}
 	uniqueRewards = 0
+	agents        = avl.NewMutTree() // std.Address -> allowance
 )
 
 func Reward(to std.Address) {
@@ -18,9 +20,14 @@ func Reward(to std.Address) {
 
 	amount := int64(100)
 
+	// TODO: log history?
+	// TODO: limit per dest?
+
+	agent, _ := agents.Get(caller.String())
+	println(agent)
 	// TODO: if allowance
 
-	// TODO: log history
+	// TODO: allowance--
 
 	send := std.Coins{{"gnot", amount}}
 	totalRewarded.Amount += amount

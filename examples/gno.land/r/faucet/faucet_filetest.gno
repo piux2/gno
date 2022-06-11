@@ -32,6 +32,9 @@ func main() {
 
 	println("before:", showBalances())
 
+	// TODO: Approve an address to send
+	// TODO: use that address to reward another one
+
 	// simulate a Deposit call.
 	std.TestSetOrigSend(std.Coins{{"gnot", 300}}, nil)
 	faucet.Reward(test1addr)
@@ -50,6 +53,9 @@ func main() {
 
 // Output:
 // before: main="200gnot", faucet="1000gnot", test1="", test2="" test3=""
+// undefined
+// undefined
+// undefined
 // after: main="200gnot", faucet="700gnot", test1="200gnot", test2="100gnot" test3=""
 // ---
 // Render:  This faucet is managed by the community.
