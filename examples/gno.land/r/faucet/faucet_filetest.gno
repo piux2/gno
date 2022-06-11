@@ -1,37 +1,58 @@
 package main
 
 import (
+	"fmt"
 	"std"
 
+	"gno.land/p/testutils"
 	"gno.land/r/faucet"
 )
 
 func main() {
-	faucetAddr := std.TestDerivePkgAddr("gno.land/r/faucet")
-
-	// print main balance before.
-	mainaddr := std.TestDerivePkgAddr("main")
+	var (
+		mainaddr   = std.TestDerivePkgAddr("main")
+		faucetaddr = std.TestDerivePkgAddr("gno.land/r/faucet")
+		test1addr  = testutils.TestAddress("test1")
+		test2addr  = testutils.TestAddress("test2")
+	)
 	banker := std.GetBanker(std.BankerTypeReadonly)
-	mainbal := banker.GetCoins(mainaddr)
-	println("main before:", mainbal) // plus OrigSend equals 300.
+	std.TestIssueCoins(faucetaddr, std.Coins{{"gnot", 1000}})
+	std.TestSetOrigPkgAddr(faucetaddr)
+
+	showBalances := func() string {
+		mainbal := banker.GetCoins(mainaddr)
+		faucetbal := banker.GetCoins(faucetaddr)
+		test1bal := banker.GetCoins(test1addr)
+		test2bal := banker.GetCoins(test2addr)
+		return fmt.Sprintf("main=%q, faucet=%q, test1=%q, test2=%q",
+			mainbal.String(), faucetbal.String(), test1bal.String(), test2bal.String())
+	}
+
+	println("before:", showBalances())
 
 	// simulate a Deposit call.
-	std.TestSetOrigPkgAddr(faucetAddr)
-	std.TestIssueCoins(faucetAddr, std.Coins{{"gnot", 100}})
 	std.TestSetOrigSend(std.Coins{{"gnot", 100}}, nil)
-	res := faucet.Reward("1xblah")
-	println("Deposit():", res)
+	faucet.Reward(test1addr)
 
-	// print main balance after.
-	mainbal = banker.GetCoins(mainaddr)
-	println("main after:", mainbal) // still 300.
+	println("after:", showBalances())
 
 	// simulate a Render().
 	ret := faucet.Render("")
 	println(ret)
+	println("done")
+}
+
+func printBalances() {
+
 }
 
 // Output:
-// main before: 200gnot
+// before: main="200gnot", faucet="1000gnot", test1="", test2=""
+// after: main="200gnot", faucet="900gnot", test1="100gnot", test2=""
+//
+// This faucet is managed by the community.
+// To get some tokens, you should find someone allowed to use it to send you some tokens.
+//
+// done
 
 // Realm:
