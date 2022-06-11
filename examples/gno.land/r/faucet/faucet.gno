@@ -5,7 +5,6 @@ import (
 
 	"gno.land/p/avl"
 	"gno.land/p/ufmt"
-	"gno.land/r/users"
 )
 
 var (
