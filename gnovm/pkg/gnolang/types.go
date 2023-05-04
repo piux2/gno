@@ -2075,6 +2075,17 @@ func KindOf(t Type) Kind {
 // and others serve as empty values.  See doOpAdd()
 // usage: if debug { assertSameTypes() }
 func assertSameTypes(lt, rt Type) {
+	if isSameTypes(lt, rt) {
+
+	} else {
+		debug.Errorf(
+			"incompatible operands in binary expression: %s and %s",
+			lt.String(),
+			rt.String(),
+		)
+	}
+}
+func isSameTypes(lt, rt Type) bool {
 	if lt == nil && rt == nil {
 		// both are nil.
 	} else if lt == nil || rt == nil {
@@ -2091,12 +2102,9 @@ func assertSameTypes(lt, rt Type) {
 	} else if lt.TypeID() == rt.TypeID() {
 		// non-nil types are identical.
 	} else {
-		debug.Errorf(
-			"incompatible operands in binary expression: %s and %s",
-			lt.String(),
-			rt.String(),
-		)
+		return false
 	}
+	return true
 }
 
 // Like assertSameTypes(), but more relaxed, for == and !=.

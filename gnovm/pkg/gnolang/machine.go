@@ -1676,8 +1676,14 @@ func (m *Machine) PopFrameAndReturn() {
 	resStart := m.NumValues - numRes
 	for i := 0; i < numRes; i++ {
 		res := m.Values[resStart+i]
-		if res.IsUndefined() && rtypes[i].Type.Kind() != InterfaceKind {
+		isRtypeInterfaceKind := rtypes[i].Type.Kind() == InterfaceKind
+		if res.IsUndefined() && !isRtypeInterfaceKind {
 			res.T = rtypes[i].Type
+		} else if dt, ok := rtypes[i].Type.(*DeclaredType); ok && !isRtypeInterfaceKind {
+			bdt := baseOf(dt)
+			if isSameTypes(bdt, res.T) {
+				res.T = rtypes[i].Type
+			}
 		}
 		m.Values[fr.NumValues+i] = res
 	}

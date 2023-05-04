@@ -41,7 +41,16 @@ func (m *Machine) doOpAssign() {
 				}
 			}
 		}
+		t := lv.TV.T // keep the orignal type
 		lv.Assign2(m.Alloc, m.Store, m.Realm, rvs[i], true)
+		//  check if lv.TV's orignal type is a DeclaredType AND it's base type is same as rvs[i] type,
+		//  if yes, we will keep the orignal type instead.
+		if dt, ok := t.(*DeclaredType); ok {
+			bdt := baseOf(dt)
+			if isSameTypes(bdt, rvs[i].T) {
+				lv.TV.T = t
+			}
+		}
 	}
 }
 
