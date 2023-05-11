@@ -154,6 +154,8 @@ func (m *Machine) doOpCall() {
 		// TODO: some more pt <> pv.Type
 		// reconciliations/conversions necessary.
 		b.Values[i] = pv
+		// assgin value but keep the parameter type.
+		b.Values[i].T = ft.Params[i].Type
 	}
 }
 

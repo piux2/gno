@@ -41,7 +41,14 @@ func (m *Machine) doOpAssign() {
 				}
 			}
 		}
-		lv.Assign2(m.Alloc, m.Store, m.Realm, rvs[i], true)
+		// Only assgin value unless left hand side is undefined
+		if lv.TV.IsDefined() {
+			t := lv.TV.T // keep the orignal type
+			lv.Assign2(m.Alloc, m.Store, m.Realm, rvs[i], true)
+			lv.TV.T = t
+		} else {
+			lv.Assign2(m.Alloc, m.Store, m.Realm, rvs[i], true)
+		}
 	}
 }
 

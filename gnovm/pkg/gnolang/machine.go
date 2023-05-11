@@ -1676,7 +1676,13 @@ func (m *Machine) PopFrameAndReturn() {
 	resStart := m.NumValues - numRes
 	for i := 0; i < numRes; i++ {
 		res := m.Values[resStart+i]
-		if res.IsUndefined() && rtypes[i].Type.Kind() != InterfaceKind {
+
+		if rtypes[i].Type.Kind() == InterfaceKind {
+			// do nothing keep orignal res type
+			// if res is undefined, we keep and turn values as is.
+		} else {
+			// return value alwasy have return type execept defined return type is an interface.
+			// assgin value only
 			res.T = rtypes[i].Type
 		}
 		m.Values[fr.NumValues+i] = res
