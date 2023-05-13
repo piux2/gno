@@ -14,9 +14,8 @@ func (n nat) one() interface{} {
 
 func main() {
 	var a nat
-	a = []int{0}
-	println(a)
-	println(a.zero())
+	a = []int{}
+
 	println(a.zero())
 	println(a.one())
 	println(a.one().(nat).zero())
@@ -24,8 +23,6 @@ func main() {
 }
 
 // Output:
-// (slice[(0 int)] main.nat)
-// slice[(0 int)]
 // slice[(0 int)]
 // (slice[(1 int)] main.nat)
 // slice[(0 int)]

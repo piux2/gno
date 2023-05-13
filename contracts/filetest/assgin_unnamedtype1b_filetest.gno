@@ -14,11 +14,11 @@ func (n nat) one() []int {
 
 func main() {
 	var a nat
-	a = []int{0}
-	println(a)
+	a = []int{}
+
 	println(a.zero())
 	println(a.zero().zero())
-
+	println(a.zero().one())
 	println(a.one())
 
 }
@@ -26,5 +26,5 @@ func main() {
 // Output:
 // (slice[(0 int)] main.nat)
 // (slice[(0 int)] main.nat)
-// (slice[(0 int)] main.nat)
+// slice[(1 int)]
 // slice[(1 int)]
