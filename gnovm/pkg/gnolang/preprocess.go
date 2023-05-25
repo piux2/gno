@@ -2336,6 +2336,16 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 			cx := Expr(Call(constType(nil, t), *x))
 			cx = Preprocess(store, last, cx).(Expr)
 			*x = cx
+		} else { // covert if one side is declared type
+			_, ok1 := t.(*DeclaredType)
+			_, ok2 := xt.(*DeclaredType)
+			if ok1 || ok2 {
+				// checkType() is already done previously, we know that type can be assigned.
+				// if both t and xt are DeclaredType but are not assginable, checkType() should have paniced already.
+				cx := Expr(Call(constType(nil, t), *x))
+				cx = Preprocess(store, last, cx).(Expr)
+				*x = cx
+			}
 		}
 	}
 }
