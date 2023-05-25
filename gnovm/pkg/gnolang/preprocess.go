@@ -2336,12 +2336,24 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 			cx := Expr(Call(constType(nil, t), *x))
 			cx = Preprocess(store, last, cx).(Expr)
 			*x = cx
-		} else { // covert if one side is declared type
-			_, ok1 := t.(*DeclaredType)
-			_, ok2 := xt.(*DeclaredType)
-			if ok1 || ok2 {
-				// checkType() is already done previously, we know that type can be assigned.
-				// if both t and xt are DeclaredType but are not assginable, checkType() should have paniced already.
+		} else { // covert if one side is declared type and the other side is
+			// array, slice, map, ,struct and func
+			_, okd1 := t.(*DeclaredType)
+			_, okd2 := xt.(*DeclaredType)
+			_, oka1 := t.(*ArrayType)
+			_, oka2 := xt.(*ArrayType)
+			_, oks1 := t.(*SliceType)
+			_, oks2 := xt.(*SliceType)
+			_, okm1 := t.(*MapType)
+			_, okm2 := xt.(*MapType)
+			_, okst1 := t.(*StructType)
+			_, okst2 := xt.(*StructType)
+			_, okf1 := t.(*FuncType)
+			_, okf2 := xt.(*FuncType)
+			if okd1 && (oka2 || oks2 || okm2 || okst2 || okf2) ||
+				okd2 && (oka1 || oks1 || okm1 || okst1 || okf1) {
+				// if both t and xt are DeclaredType but are not assginable, checkType() should have already paniced
+				// we do not convert if either side is a native type
 				cx := Expr(Call(constType(nil, t), *x))
 				cx = Preprocess(store, last, cx).(Expr)
 				*x = cx
