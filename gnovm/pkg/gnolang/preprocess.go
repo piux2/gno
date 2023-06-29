@@ -1580,6 +1580,67 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 										"%d variables but %s returns %d values",
 									len(n.Lhs), cx.Func.String(), len(cft.Results)))
 							}
+
+							/* ----- START of discussion ---- */
+							// The code is simplifed for discussion only
+							// only enter this section if cft.Results to be converted to Lhs type according to the
+							// name and unnamed type assignmetn rules.
+
+							// Decomplose  a,b = x()  to one definition statement and one assignment statement
+							// tmp1, tmp2 := x()
+							// a,b = tmp1, tmp2
+							//
+							// copy the a,b = x() and create a new statement a,b = _tmp_1, _tmp_2
+							// we should use NameEpxr .tmp_1 to hide from gno useres. Right now _tmp_1 allow us to use it in gno for debuging purose.
+
+							fbody := last.GetBody()
+							astmt := n.Copy().(*AssignStmt)
+							astmt.SetAttribute(ATTR_PREPROCESSED, false)
+							astmt.Rhs = Exprs{X("_tmp_1"), X("_tmp_2")}
+							//  add or insert a new assignment statements a,b = _tmp1_,tmp_1 AFTER the current statement in the last.Body.
+							if len(fbody) == 0 {
+
+								last.(*FuncDecl).Body = append(fbody, Body{astmt}...)
+							} else {
+								last.(*FuncDecl).Body = append(fbody[:index+1], append(Body{astmt}, fbody[index+1:]...)...)
+							}
+							// update current assignment node and run define tmp1,tmp2 := x()
+							n.Lhs = Exprs{X("_tmp_1"), X("_tmp_2")}
+							n.Op = DEFINE
+
+							for i, lx := range n.Lhs {
+								ln := lx.(*NameExpr).Name
+								rf := cft.Results[i]
+								last.Define(ln, anyValue(rf.Type))
+								fillNameExprPath(last, lx.(*NameExpr), true)
+							}
+							// # ISSUE1: Don't have a good solution
+							// After preprocess the last lastment in FuncDecl.Body will not be transcribed
+							// in the exampe println(u2) will not be preprocessed and u2 will have empty PathValue.
+							// VM will throw non pointer panic when execute this.
+							//
+							// ### Cause: transcribe flow
+							// in transcribe.go
+							// case *FuncDecl: // func main()
+							//   :
+							// 	 for idx := range cnn.Body {
+							//     :
+							//     cnn.Body[idx] = transcribe(t, nns, TRANS_FUNC_BODY, idx, cnn.Body[idx], &c).(Stmt)
+							//   }
+							//   :
+							//   Can not extend the length of cnn.Body ([]stmt) therefore it does not range through the extra statements
+							//
+							// # ISSUE2: we have solution
+							// The FuncValue.body is not updated after preprocess and VM run time will not evaluate the extra statemetns in the FuncValue.Source.Body
+							//
+							// ### Solution: need to insert the statement astmt to FuncValue.body of PackageNode.Values[i].V
+							// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
+							// Option2: Add transcribe type FuncValue
+							// Option3: updating FuncValue.body=FuncValue.Source.Body when run updates := pn.PrepareNewValues(pv) before run time
+							// Current Option3.
+							// Option4: in Op_Call: same as option3 but in run time .call FuncValue.GetBodyFromSource() to synce FuncValue.body with FuncValue.Source.Body
+
+							/* ----- END of discussion ---- */
 						case *TypeAssertExpr:
 							// Type-assert case: a, ok := x.(type)
 							if len(n.Lhs) != 2 {
