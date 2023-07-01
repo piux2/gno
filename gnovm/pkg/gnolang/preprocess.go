@@ -1614,7 +1614,8 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 								last.Define(ln, anyValue(rf.Type))
 								fillNameExprPath(last, lx.(*NameExpr), true)
 							}
-							// # ISSUE1: Don't have a good solution
+
+							// # ISSUE1:
 							// After preprocess the last lastment in FuncDecl.Body will not be transcribed
 							// in the exampe println(u2) will not be preprocessed and u2 will have empty PathValue.
 							// VM will throw non pointer panic when execute this.
@@ -1629,7 +1630,15 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							//   }
 							//   :
 							//   Can not extend the length of cnn.Body ([]stmt) therefore it does not range through the extra statements
-							//
+
+							// ### Solution:
+							// we Preprocess the last statement of the new FuncDecl.Body
+
+							nbody := last.(*FuncDecl).Body
+							Preprocess(store, last, nbody[len(nbody)-1])
+							// Discussion:
+							// What will be the side effect to preprocess the last statement before other statements in the Body?
+
 							// # ISSUE2: we have solution
 							// The FuncValue.body is not updated after preprocess and VM run time will not evaluate the extra statemetns in the FuncValue.Source.Body
 							//
@@ -1637,7 +1646,7 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
 							// Option2: Add transcribe type FuncValue
 							// Option3: updating FuncValue.body=FuncValue.Source.Body when run updates := pn.PrepareNewValues(pv) before run time
-							// Current Option3.
+							// Current we implemented the Option3.
 							// Option4: in Op_Call: same as option3 but in run time .call FuncValue.GetBodyFromSource() to synce FuncValue.body with FuncValue.Source.Body
 
 							/* ----- END of discussion ---- */
