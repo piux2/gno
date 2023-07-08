@@ -1538,8 +1538,13 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							lhs0 := n.Lhs[0].(*NameExpr).Name
 							lhs1 := n.Lhs[1].(*NameExpr).Name
 
-							dt := evalStaticTypeOf(store, last, cx.X)
-							mt := baseOf(dt).(*MapType)
+							var mt *MapType
+							st := evalStaticTypeOf(store, last, cx.X)
+							if dt, ok := st.(*DeclaredType); ok {
+								mt = dt.Base.(*MapType)
+							} else if mt, ok = st.(*MapType); !ok {
+								panic("should not happen")
+							}
 							// re-definitions
 							last.Define(lhs0, anyValue(mt.Value))
 							last.Define(lhs1, anyValue(BoolType))
@@ -1582,65 +1587,108 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							}
 
 							/* ----- START of discussion ---- */
-							// The code is simplifed for discussion only
-							// only enter this section if cft.Results to be converted to Lhs type according to the
-							// name and unnamed type assignmetn rules.
 
-							// Decomplose  a,b = x()  to one definition statement and one assignment statement
-							// tmp1, tmp2 := x()
-							// a,b = tmp1, tmp2
-							//
-							// copy the a,b = x() and create a new statement a,b = _tmp_1, _tmp_2
-							// we should use NameEpxr .tmp_1 to hide from gno useres. Right now _tmp_1 allow us to use it in gno for debuging purose.
+							decompose := false
 
-							fbody := last.GetBody()
-							astmt := n.Copy().(*AssignStmt)
-							astmt.SetAttribute(ATTR_PREPROCESSED, false)
-							astmt.Rhs = Exprs{X("_tmp_1"), X("_tmp_2")}
-							//  add or insert a new assignment statements a,b = _tmp1_,tmp_1 AFTER the current statement in the last.Body.
-							if len(fbody) == 0 {
-
-								last.(*FuncDecl).Body = append(fbody, Body{astmt}...)
-							} else {
-								last.(*FuncDecl).Body = append(fbody[:index+1], append(Body{astmt}, fbody[index+1:]...)...)
-							}
-							// update current assignment node and run define tmp1,tmp2 := x()
-							n.Lhs = Exprs{X("_tmp_1"), X("_tmp_2")}
-							n.Op = DEFINE
-
-							for i, lx := range n.Lhs {
-								ln := lx.(*NameExpr).Name
-								rf := cft.Results[i]
-								last.Define(ln, anyValue(rf.Type))
-								fillNameExprPath(last, lx.(*NameExpr), true)
+							for i, rhsType := range cft.Results {
+								lt := evalStaticTypeOf(store, last, n.Lhs[i])
+								if lt != nil && isNamedConversion(rhsType.Type, lt) {
+									decompose = true
+									break
+								}
 							}
 
-							// # ISSUE1:
-							// After preprocess the last lastment in FuncDecl.Body will not be transcribed
-							// in the exampe println(u2) will not be preprocessed and u2 will have empty PathValue.
-							// VM will throw non pointer panic when execute this.
-							//
-							// ### Cause: transcribe flow
-							// in transcribe.go
-							// case *FuncDecl: // func main()
-							//   :
-							// 	 for idx := range cnn.Body {
-							//     :
-							//     cnn.Body[idx] = transcribe(t, nns, TRANS_FUNC_BODY, idx, cnn.Body[idx], &c).(Stmt)
-							//   }
-							//   :
-							//   Can not extend the length of cnn.Body ([]stmt) therefore it does not range through the extra statements
+							if decompose == true {
 
-							// ### Solution:
-							// we Preprocess the last statement of the new FuncDecl.Body
+								// only enter this section if cft.Results to be converted to Lhs type and >1? worth to check this?
+								// a,b = x() decopose to:
+								// tmp1, tmp2 := x()  convert current statement to (Op=DEFINE)
+								// a,b = tmp1, tmp2   add a newStmt ( Op=ASSIGN )
+								// add statement to the FuncDecl.Body
+								//
+								// copy the a,b = x() and create a new statement a,b = _tmp_1, _tmp_2
+								// add or insert a new assignment statements a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
+								fbody := last.GetBody()
+								curBodyLen := len(fbody)
+								origBodyLen := last.GetStaticBlock().GetBlock().GetBodyStmt().BodyLen
 
-							nbody := last.(*FuncDecl).Body
-							Preprocess(store, last, nbody[len(nbody)-1])
-							// Discussion:
-							// What will be the side effect to preprocess the last statement before other statements in the Body?
+								newStmt := n.Copy().(*AssignStmt)
+								newStmt.SetAttribute(ATTR_PREPROCESSED, false)
+								newStmt.Line = n.Line
+								// No need to change astmt.Lhs
+								var rhsExprs Exprs
+								for i, _ := range cft.Results {
+									// create a hidden var with leading dot. the curBodyLen increase every time when there is an decompostion
+									// we use curBodyLen to differentiate the .tmp variables created in each assignment decompostion
+									rn := fmt.Sprintf("_tmp_%d_%d", curBodyLen, i)
+									rhsExprs = append(rhsExprs, X(rn))
+								}
+								newStmt.Rhs = rhsExprs
+								//  add or insert a new assignment statements a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
+								if len(fbody) == 0 {
 
+									last.(*FuncDecl).Body = append(fbody, Body{newStmt}...)
+								} else {
+									last.(*FuncDecl).Body = append(fbody[:index+1], append(Body{newStmt}, fbody[index+1:]...)...)
+								}
+
+								// DISCUSSION: need to insert the statement astmt to FuncValue.body of PackageNopde.Values[i].V
+								// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
+								// Option2:   Add transcribe type FuncValue
+								// Option3:  updating FuncValue.body=FuncValue.Source.Body in updates := pn.PrepareNewValues(pv)
+								// Current Option3. Need to Update FuncValue from source
+								// Option4: in Op_Call: FuncValue.GetBodyFromSource synce FuncValue.body with Source body
+								//
+								// update current assignment node and run define tmp1,tmp2 := x()
+								for i, lx := range n.Lhs {
+									if lx.(*NameExpr).Name == "_" {
+										continue
+									}
+									// create a hidden var with leading dot.
+									ln := fmt.Sprintf("_tmp_%d_%d", curBodyLen, i)
+									n.Lhs[i] = X(ln)
+								}
+								n.Op = DEFINE
+
+								for i, lx := range n.Lhs {
+									ln := lx.(*NameExpr).Name
+									rf := cft.Results[i]
+									// re-definition
+									last.Define(ln, anyValue(rf.Type))
+									fillNameExprPath(last, lx.(*NameExpr), true)
+								}
+
+								// # ISSUE1:
+								// After preprocess the last lastment in FuncDecl.Body will not be transcribed
+								// in the exampe println(u2) will not be preprocessed and u2 will have empty PathValue.
+								// VM will throw non pointer panic when execute this.
+								//
+								// ### Cause: transcribe flow
+								// in transcribe.go
+								// case *FuncDecl: // func main()
+								//   :
+								// 	 for idx := range cnn.Body {
+								//     :
+								//     cnn.Body[idx] = transcribe(t, nns, TRANS_FUNC_BODY, idx, cnn.Body[idx], &c).(Stmt)
+								//   }
+								//   :
+								//   Can not extend the length of cnn.Body ([]stmt) therefore it does not range through the extra statements
+
+								// ### Solution:
+								// Alway peprocess the +1 index of orignal body length in the newBody
+								// since the new last.Body could keep growing when multiple assign stmt decomposition happens
+								// We need to use the original body len as preprocess index in the newBody
+								newBody := last.(*FuncDecl).Body
+								Preprocess(store, last, newBody[origBodyLen])
+								// DISCUSSION:
+								// What will be the side effect to preprocess the last statement before other statements in the Body?
+
+								return n, TRANS_CONTINUE
+
+							}
 							// # ISSUE2: we have solution
-							// The FuncValue.body is not updated after preprocess and VM run time will not evaluate the extra statemetns in the FuncValue.Source.Body
+							// The FuncValue.body is not updated after we changed the body in preproces.
+							// VM run time will not evaluate the extra statemetns in the FuncValue.Source.Body
 							//
 							// ### Solution: need to insert the statement astmt to FuncValue.body of PackageNode.Values[i].V
 							// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
@@ -1650,6 +1698,12 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							// Option4: in Op_Call: same as option3 but in run time .call FuncValue.GetBodyFromSource() to synce FuncValue.body with FuncValue.Source.Body
 
 							/* ----- END of discussion ---- */
+							for i, lx := range n.Lhs {
+								lt := evalStaticTypeOf(store, last, lx)
+								if lt != nil {
+									checkType(cft.Results[i].Type, lt, false)
+								}
+							}
 						case *TypeAssertExpr:
 							// Type-assert case: a, ok := x.(type)
 							if len(n.Lhs) != 2 {
@@ -2010,6 +2064,28 @@ func pushInitBlock(bn BlockNode, last *BlockNode, stack *[]BlockNode) {
 	if bn.GetStaticBlock().Source != bn {
 		panic("expected the source of a block node to be itself")
 	}
+	hasBody := true
+
+	switch bn.(type) {
+	case *IfStmt:
+		hasBody = false
+	case *SwitchStmt:
+		hasBody = false
+	case *FileNode:
+		hasBody = false
+	case *PackageNode:
+		hasBody = false
+	default:
+
+	}
+
+	if hasBody {
+		bn.GetStaticBlock().bodyStmt = bodyStmt{
+			Body:    bn.GetBody(),
+			BodyLen: len(bn.GetBody()),
+		}
+	}
+
 	*last = bn
 	*stack = append(*stack, bn)
 }
@@ -2407,29 +2483,47 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 			cx = Preprocess(store, last, cx).(Expr)
 			*x = cx
 		} else { // covert if one side is declared type and the other side is
-			// array, slice, map, ,struct and func
-			_, okd1 := t.(*DeclaredType)
-			_, okd2 := xt.(*DeclaredType)
-			_, oka1 := t.(*ArrayType)
-			_, oka2 := xt.(*ArrayType)
-			_, oks1 := t.(*SliceType)
-			_, oks2 := xt.(*SliceType)
-			_, okm1 := t.(*MapType)
-			_, okm2 := xt.(*MapType)
-			_, okst1 := t.(*StructType)
-			_, okst2 := xt.(*StructType)
-			_, okf1 := t.(*FuncType)
-			_, okf2 := xt.(*FuncType)
-			if okd1 && (oka2 || oks2 || okm2 || okst2 || okf2) ||
-				okd2 && (oka1 || oks1 || okm1 || okst1 || okf1) {
-				// if both t and xt are DeclaredType but are not assginable, checkType() should have already paniced
-				// we do not convert if either side is a native type
+			if isNamedConversion(xt, t) {
 				cx := Expr(Call(constType(nil, t), *x))
 				cx = Preprocess(store, last, cx).(Expr)
 				*x = cx
 			}
 		}
 	}
+}
+
+// Return true if we need to convert named and unnamed types in an assignment
+func isNamedConversion(xt, t Type) bool {
+
+	if t == nil {
+
+		t = xt
+	}
+
+	// t is left hand destination type, xt is right hand expression type
+	// In a few special cases, we should not consider compare named and unnamed type
+	// case 1: if left is interface, which is unnamed, we dont convert to the left type even right is named type.
+
+	_, c1 := t.(*InterfaceType)
+
+	// case2: TypeType is used in make() new() native uverse definition and TypeType.IsNamed() will panic on unexpected.
+
+	_, oktt := t.(*TypeType)
+	_, oktt2 := xt.(*TypeType)
+	c2 := oktt || oktt2
+
+	//
+	if !c1 && !c2 { // carve out above two cases
+		// covert right to the type of left if one side is unnamed type and the other side is not
+
+		if t.IsNamed() && !xt.IsNamed() ||
+			!t.IsNamed() && xt.IsNamed() {
+			return true
+		}
+
+	}
+	return false
+
 }
 
 // like checkOrConvertType(last, x, nil)
