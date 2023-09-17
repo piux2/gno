@@ -1585,9 +1585,7 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 										"%d variables but %s returns %d values",
 									len(n.Lhs), cx.Func.String(), len(cft.Results)))
 							}
-
-							/* ----- START of discussion ---- */
-
+							// check if we we need to decompose for named typed conversion in the function return results
 							decompose := false
 
 							for i, rhsType := range cft.Results {
@@ -1598,112 +1596,72 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 								}
 							}
 
-							if decompose == true {
+							if decompose ==true{
 
-								// only enter this section if cft.Results to be converted to Lhs type and >1? worth to check this?
-								// a,b = x() decopose to:
-								// tmp1, tmp2 := x()  convert current statement to (Op=DEFINE)
-								// a,b = tmp1, tmp2   add a newStmt ( Op=ASSIGN )
-								// add statement to the FuncDecl.Body
-								//
-								// copy the a,b = x() and create a new statement a,b = _tmp_1, _tmp_2
-								// add or insert a new assignment statements a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
-								fbody := last.GetBody()
-								curBodyLen := len(fbody)
-								origBodyLen := last.GetStaticBlock().GetBlock().GetBodyStmt().BodyLen
 
-								newStmt := n.Copy().(*AssignStmt)
-								newStmt.SetAttribute(ATTR_PREPROCESSED, false)
-								newStmt.Line = n.Line
-								// No need to change astmt.Lhs
-								var rhsExprs Exprs
+								// only enter this section if cft.Results to be converted to Lhs type for named type conversion.
+							  // decompose a,b = x()
+							  // tmp1, tmp2 := x()  assignment statemet expression (Op=DEFINE)
+							  // a,b = tmp1, tmp2   assignment statemet expression ( Op=ASSIGN )
+							  // add the new statement to last.Body
+
+								// step1:
+								// create a hidden var with leading _ the curBodyLen increase every time when there is an decompostion
+								// because there could be multiple decomposition happens
+								// we use both stmt index and resturn result number to differentiate the _tmp variables created in each assignment decompostion
+								// ex. _tmp_3_2: this variabl is created as the 3rd statement in the block, the 2nd parameter returned from x(),
+								// create _tmp_1_1, tmp_1_2 .... based on number of result from x()
+								var tmpExprs Exprs
 								for i, _ := range cft.Results {
-									// create a hidden var with leading dot. the curBodyLen increase every time when there is an decompostion
-									// we use curBodyLen to differentiate the .tmp variables created in each assignment decompostion
-									rn := fmt.Sprintf("_tmp_%d_%d", curBodyLen, i)
-									rhsExprs = append(rhsExprs, X(rn))
+									rn := fmt.Sprintf("_tmp_%d_%d", index, i)
+									tmpExprs = append(tmpExprs, Nx(rn))
 								}
-								newStmt.Rhs = rhsExprs
-								//  add or insert a new assignment statements a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
-								if len(fbody) == 0 {
-
-									last.(*FuncDecl).Body = append(fbody, Body{newStmt}...)
-								} else {
-									last.(*FuncDecl).Body = append(fbody[:index+1], append(Body{newStmt}, fbody[index+1:]...)...)
+								// step2:
+							  // tmp1, tmp2 := x()
+							  dsx := &AssignStmt{
+									Lhs: tmpExprs,
+									Op: DEFINE,
+									Rhs: n.Rhs,
 								}
+								dsx.SetLine(n.Line)
+								dsx = Preprocess(store,  last,dsx).(*AssignStmt)
 
-								// DISCUSSION: need to insert the statement astmt to FuncValue.body of PackageNopde.Values[i].V
+								// step3:
+
+								// a,b = tmp1, tmp2
+								// assign stmt expression
+								// the right hand side will be converted to  call expr for nameed/unnamed covnerstion
+								// we make a copy of tmpExrs to prevent dsx.Lhs in the preview statement changing by the side effect
+								// when asx.Rhs is converted to const call expr during the preprocess of the next statement
+
+								asx := &AssignStmt{
+									Lhs: n.Lhs,
+									Op: ASSIGN,
+									Rhs: copyExprs(tmpExprs),
+
+								}
+								asx.SetLine(n.Line)
+								asx = Preprocess(store,  last,asx).(*AssignStmt)
+
+								// step4:
+								// replace the orignal stmt with two new stmts
+								body := last.GetBody()
+								// we need to do an in-place replacement while leaving the current node
+								n.Attributes = dsx.Attributes
+								n.Lhs = dsx.Lhs
+								n.Op =dsx.Op
+								n.Rhs=dsx.Rhs
+
+								//  insert a assignment statement a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
+								body = append(body[:index+1], append(Body{asx}, body[index+1:]...)...)
+					      last.SetBody(body)
+							} // end of the decomposition
+
+								// DISCUSSION: we need to insert the statements to FuncValue.body of PackageNopde.Values[i].V
 								// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
-								// Option2:   Add transcribe type FuncValue
-								// Option3:  updating FuncValue.body=FuncValue.Source.Body in updates := pn.PrepareNewValues(pv)
-								// Current Option3. Need to Update FuncValue from source
-								// Option4: in Op_Call: FuncValue.GetBodyFromSource synce FuncValue.body with Source body
-								//
-								// update current assignment node and run define tmp1,tmp2 := x()
-								for i, lx := range n.Lhs {
-									if lx.(*NameExpr).Name == "_" {
-										continue
-									}
-									// create a hidden var with leading dot.
-									ln := fmt.Sprintf("_tmp_%d_%d", curBodyLen, i)
-									n.Lhs[i] = X(ln)
-								}
-								n.Op = DEFINE
-
-								for i, lx := range n.Lhs {
-									ln := lx.(*NameExpr).Name
-									rf := cft.Results[i]
-									// re-definition
-									last.Define(ln, anyValue(rf.Type))
-									fillNameExprPath(last, lx.(*NameExpr), true)
-								}
-
-								// # ISSUE1:
-								// After preprocess the last lastment in FuncDecl.Body will not be transcribed
-								// in the exampe println(u2) will not be preprocessed and u2 will have empty PathValue.
-								// VM will throw non pointer panic when execute this.
-								//
-								// ### Cause: transcribe flow
-								// in transcribe.go
-								// case *FuncDecl: // func main()
-								//   :
-								// 	 for idx := range cnn.Body {
-								//     :
-								//     cnn.Body[idx] = transcribe(t, nns, TRANS_FUNC_BODY, idx, cnn.Body[idx], &c).(Stmt)
-								//   }
-								//   :
-								//   Can not extend the length of cnn.Body ([]stmt) therefore it does not range through the extra statements
-
-								// ### Solution:
-								// Alway peprocess the +1 index of orignal body length in the newBody
-								// since the new last.Body could keep growing when multiple assign stmt decomposition happens
-								// We need to use the original body len as preprocess index in the newBody
-								newBody := last.(*FuncDecl).Body
-								Preprocess(store, last, newBody[origBodyLen])
-								// DISCUSSION:
-								// What will be the side effect to preprocess the last statement before other statements in the Body?
-
-								return n, TRANS_CONTINUE
-
-							}
-							// # ISSUE2: we have solution
-							// The FuncValue.body is not updated after we changed the body in preproces.
-							// VM run time will not evaluate the extra statemetns in the FuncValue.Source.Body
-							//
-							// ### Solution: need to insert the statement astmt to FuncValue.body of PackageNode.Values[i].V
-							// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
-							// Option2: Add transcribe type FuncValue
-							// Option3: updating FuncValue.body=FuncValue.Source.Body when run updates := pn.PrepareNewValues(pv) before run time
-							// Current we implemented the Option3.
-							// Option4: in Op_Call: same as option3 but in run time .call FuncValue.GetBodyFromSource() to synce FuncValue.body with FuncValue.Source.Body
-
-							/* ----- END of discussion ---- */
-							for i, lx := range n.Lhs {
-								lt := evalStaticTypeOf(store, last, lx)
-								if lt != nil {
-									checkType(cft.Results[i].Type, lt, false)
-								}
-							}
+								// Option2: updating FuncValue.body=FuncValue.Source.Body in updates := pn.PrepareNewValues(pv) during preprocess.
+								//           current is Option2. we need to Update FuncValue from source
+								// Option3: in Op_Call: FuncValue.GetBodyFromSource synce FuncValue.body with Source body
 						case *TypeAssertExpr:
 							// Type-assert case: a, ok := x.(type)
 							if len(n.Lhs) != 2 {
@@ -2064,28 +2022,6 @@ func pushInitBlock(bn BlockNode, last *BlockNode, stack *[]BlockNode) {
 	if bn.GetStaticBlock().Source != bn {
 		panic("expected the source of a block node to be itself")
 	}
-	hasBody := true
-
-	switch bn.(type) {
-	case *IfStmt:
-		hasBody = false
-	case *SwitchStmt:
-		hasBody = false
-	case *FileNode:
-		hasBody = false
-	case *PackageNode:
-		hasBody = false
-	default:
-
-	}
-
-	if hasBody {
-		bn.GetStaticBlock().bodyStmt = bodyStmt{
-			Body:    bn.GetBody(),
-			BodyLen: len(bn.GetBody()),
-		}
-	}
-
 	*last = bn
 	*stack = append(*stack, bn)
 }
@@ -2292,12 +2228,12 @@ func getResultTypedValues(cx *CallExpr) []TypedValue {
 func evalConst(store Store, last BlockNode, x Expr) *ConstExpr {
 	// TODO: some check or verification for ensuring x
 	// is constant?  From the machine?
-	cv := NewMachine(".dontcare", store)
-	tv := cv.EvalStatic(last, x)
-	cv.Release()
+	m := NewMachine(".dontcare", store)
+	cv := m.EvalStatic(last, x)
+  m.Release()
 	cx := &ConstExpr{
 		Source:     x,
-		TypedValue: tv,
+		TypedValue: cv,
 	}
 	cx.SetAttribute(ATTR_PREPROCESSED, true)
 	setConstAttrs(cx)
@@ -2454,11 +2390,13 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 		// "push" expected type into shift binary's left operand.
 		checkOrConvertType(store, last, &bx.Left, t, autoNative)
 	} else if *x != nil { // XXX if x != nil && t != nil {
+		// check type
 		xt := evalStaticTypeOf(store, last, *x)
 		if t != nil {
 			checkType(xt, t, autoNative)
 		}
-		if isUntyped(xt) {
+		// convert type
+		if isUntyped(xt) { // convert if x is untyped literal
 			if t == nil {
 				t = defaultTypeOf(xt)
 			}
@@ -2479,11 +2417,14 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 					// default:
 				}
 			}
+			// convert x to destination type t
 			cx := Expr(Call(constType(nil, t), *x))
 			cx = Preprocess(store, last, cx).(Expr)
 			*x = cx
-		} else { // covert if one side is declared type and the other side is
+		} else {
+			//if one side is declared name type and the other side is unnamed type
 			if isNamedConversion(xt, t) {
+				// covert right (xt) to the type of the left (t)
 				cx := Expr(Call(constType(nil, t), *x))
 				cx = Preprocess(store, last, cx).(Expr)
 				*x = cx
