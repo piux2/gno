@@ -1538,8 +1538,13 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 							lhs0 := n.Lhs[0].(*NameExpr).Name
 							lhs1 := n.Lhs[1].(*NameExpr).Name
 
-							dt := evalStaticTypeOf(store, last, cx.X)
-							mt := baseOf(dt).(*MapType)
+							var mt *MapType
+							st := evalStaticTypeOf(store, last, cx.X)
+							if dt, ok := st.(*DeclaredType); ok {
+								mt = dt.Base.(*MapType)
+							} else if mt, ok = st.(*MapType); !ok {
+								panic("should not happen")
+							}
 							// re-definitions
 							last.Define(lhs0, anyValue(mt.Value))
 							last.Define(lhs1, anyValue(BoolType))
@@ -1580,6 +1585,83 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 										"%d variables but %s returns %d values",
 									len(n.Lhs), cx.Func.String(), len(cft.Results)))
 							}
+							// check if we we need to decompose for named typed conversion in the function return results
+							decompose := false
+
+							for i, rhsType := range cft.Results {
+								lt := evalStaticTypeOf(store, last, n.Lhs[i])
+								if lt != nil && isNamedConversion(rhsType.Type, lt) {
+									decompose = true
+									break
+								}
+							}
+
+							if decompose ==true{
+
+
+								// only enter this section if cft.Results to be converted to Lhs type for named type conversion.
+							  // decompose a,b = x()
+							  // tmp1, tmp2 := x()  assignment statemet expression (Op=DEFINE)
+							  // a,b = tmp1, tmp2   assignment statemet expression ( Op=ASSIGN )
+							  // add the new statement to last.Body
+
+								// step1:
+								// create a hidden var with leading _ the curBodyLen increase every time when there is an decompostion
+								// because there could be multiple decomposition happens
+								// we use both stmt index and resturn result number to differentiate the _tmp variables created in each assignment decompostion
+								// ex. _tmp_3_2: this variabl is created as the 3rd statement in the block, the 2nd parameter returned from x(),
+								// create _tmp_1_1, tmp_1_2 .... based on number of result from x()
+								var tmpExprs Exprs
+								for i, _ := range cft.Results {
+									rn := fmt.Sprintf("_tmp_%d_%d", index, i)
+									tmpExprs = append(tmpExprs, Nx(rn))
+								}
+								// step2:
+							  // tmp1, tmp2 := x()
+							  dsx := &AssignStmt{
+									Lhs: tmpExprs,
+									Op: DEFINE,
+									Rhs: n.Rhs,
+								}
+								dsx.SetLine(n.Line)
+								dsx = Preprocess(store,  last,dsx).(*AssignStmt)
+
+								// step3:
+
+								// a,b = tmp1, tmp2
+								// assign stmt expression
+								// the right hand side will be converted to  call expr for nameed/unnamed covnerstion
+								// we make a copy of tmpExrs to prevent dsx.Lhs in the preview statement changing by the side effect
+								// when asx.Rhs is converted to const call expr during the preprocess of the next statement
+
+								asx := &AssignStmt{
+									Lhs: n.Lhs,
+									Op: ASSIGN,
+									Rhs: copyExprs(tmpExprs),
+
+								}
+								asx.SetLine(n.Line)
+								asx = Preprocess(store,  last,asx).(*AssignStmt)
+
+								// step4:
+								// replace the orignal stmt with two new stmts
+								body := last.GetBody()
+								// we need to do an in-place replacement while leaving the current node
+								n.Attributes = dsx.Attributes
+								n.Lhs = dsx.Lhs
+								n.Op =dsx.Op
+								n.Rhs=dsx.Rhs
+
+								//  insert a assignment statement a,b = tmp1,tmp2 AFTER the current statement in the last.Body.
+								body = append(body[:index+1], append(Body{asx}, body[index+1:]...)...)
+					      last.SetBody(body)
+							} // end of the decomposition
+
+								// DISCUSSION: we need to insert the statements to FuncValue.body of PackageNopde.Values[i].V
+								// Option1: make FuncValue.body as a poninter to FuncValue.Source.Body
+								// Option2: updating FuncValue.body=FuncValue.Source.Body in updates := pn.PrepareNewValues(pv) during preprocess.
+								//           current is Option2. we need to Update FuncValue from source
+								// Option3: in Op_Call: FuncValue.GetBodyFromSource synce FuncValue.body with Source body
 						case *TypeAssertExpr:
 							// Type-assert case: a, ok := x.(type)
 							if len(n.Lhs) != 2 {
@@ -2146,12 +2228,12 @@ func getResultTypedValues(cx *CallExpr) []TypedValue {
 func evalConst(store Store, last BlockNode, x Expr) *ConstExpr {
 	// TODO: some check or verification for ensuring x
 	// is constant?  From the machine?
-	cv := NewMachine(".dontcare", store)
-	tv := cv.EvalStatic(last, x)
-	cv.Release()
+	m := NewMachine(".dontcare", store)
+	cv := m.EvalStatic(last, x)
+  m.Release()
 	cx := &ConstExpr{
 		Source:     x,
-		TypedValue: tv,
+		TypedValue: cv,
 	}
 	cx.SetAttribute(ATTR_PREPROCESSED, true)
 	setConstAttrs(cx)
@@ -2308,11 +2390,13 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 		// "push" expected type into shift binary's left operand.
 		checkOrConvertType(store, last, &bx.Left, t, autoNative)
 	} else if *x != nil { // XXX if x != nil && t != nil {
+		// check type
 		xt := evalStaticTypeOf(store, last, *x)
 		if t != nil {
 			checkType(xt, t, autoNative)
 		}
-		if isUntyped(xt) {
+		// convert type
+		if isUntyped(xt) { // convert if x is untyped literal
 			if t == nil {
 				t = defaultTypeOf(xt)
 			}
@@ -2333,11 +2417,54 @@ func checkOrConvertType(store Store, last BlockNode, x *Expr, t Type, autoNative
 					// default:
 				}
 			}
+			// convert x to destination type t
 			cx := Expr(Call(constType(nil, t), *x))
 			cx = Preprocess(store, last, cx).(Expr)
 			*x = cx
+		} else {
+			//if one side is declared name type and the other side is unnamed type
+			if isNamedConversion(xt, t) {
+				// covert right (xt) to the type of the left (t)
+				cx := Expr(Call(constType(nil, t), *x))
+				cx = Preprocess(store, last, cx).(Expr)
+				*x = cx
+			}
 		}
 	}
+}
+
+// Return true if we need to convert named and unnamed types in an assignment
+func isNamedConversion(xt, t Type) bool {
+
+	if t == nil {
+
+		t = xt
+	}
+
+	// t is left hand destination type, xt is right hand expression type
+	// In a few special cases, we should not consider compare named and unnamed type
+	// case 1: if left is interface, which is unnamed, we dont convert to the left type even right is named type.
+
+	_, c1 := t.(*InterfaceType)
+
+	// case2: TypeType is used in make() new() native uverse definition and TypeType.IsNamed() will panic on unexpected.
+
+	_, oktt := t.(*TypeType)
+	_, oktt2 := xt.(*TypeType)
+	c2 := oktt || oktt2
+
+	//
+	if !c1 && !c2 { // carve out above two cases
+		// covert right to the type of left if one side is unnamed type and the other side is not
+
+		if t.IsNamed() && !xt.IsNamed() ||
+			!t.IsNamed() && xt.IsNamed() {
+			return true
+		}
+
+	}
+	return false
+
 }
 
 // like checkOrConvertType(last, x, nil)
