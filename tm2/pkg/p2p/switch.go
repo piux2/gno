@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/metrics"
 	"github.com/gnolang/gno/tm2/pkg/cmap"
 	"github.com/gnolang/gno/tm2/pkg/errors"
 	"github.com/gnolang/gno/tm2/pkg/p2p/config"
@@ -242,6 +244,7 @@ func (sw *Switch) OnStop() {
 //
 // NOTE: Broadcast uses goroutines, so order of broadcast may not be preserved.
 func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
+	start := time.Now()
 	sw.Logger.Debug("Broadcast", "channel", chID, "msgBytes", fmt.Sprintf("%X", msgBytes))
 
 	peers := sw.peers.List()
@@ -260,6 +263,9 @@ func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
 	go func() {
 		wg.Wait()
 		close(successChan)
+		if telemetry.IsEnabled() {
+			metrics.BroadcastTxHistogram.Record(time.Since(start).Milliseconds())
+		}
 	}()
 
 	return successChan

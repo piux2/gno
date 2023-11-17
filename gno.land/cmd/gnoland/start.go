@@ -5,11 +5,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gnolang/gno/gno.land/pkg/gnoland"
+	"github.com/gnolang/gno/telemetry"
 	abci "github.com/gnolang/gno/tm2/pkg/bft/abci/types"
 	"github.com/gnolang/gno/tm2/pkg/bft/config"
 	"github.com/gnolang/gno/tm2/pkg/bft/node"
@@ -176,6 +178,14 @@ func (c *startCfg) RegisterFlags(fs *flag.FlagSet) {
 func execStart(c *startCfg, io commands.IO) error {
 	logger := log.NewTMLogger(log.NewSyncWriter(io.Out()))
 	dataDir := c.dataDir
+
+	if strings.ToLower(os.Getenv("TELEMETRY_ENABLED")) == "true" {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		if err := telemetry.Init(ctx); err != nil {
+			panic("error initialzing telemetry: " + err.Error())
+		}
+	}
 
 	var (
 		cfg        *config.Config
