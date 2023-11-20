@@ -244,7 +244,7 @@ func (sw *Switch) OnStop() {
 //
 // NOTE: Broadcast uses goroutines, so order of broadcast may not be preserved.
 func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
-	start := time.Now()
+	startTime := time.Now()
 	sw.Logger.Debug("Broadcast", "channel", chID, "msgBytes", fmt.Sprintf("%X", msgBytes))
 
 	peers := sw.peers.List()
@@ -264,7 +264,7 @@ func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
 		wg.Wait()
 		close(successChan)
 		if telemetry.IsEnabled() {
-			metrics.BroadcastTxHistogram.Record(time.Since(start).Milliseconds())
+			metrics.BroadcastTxTimer.Collect(time.Since(startTime).Milliseconds())
 		}
 	}()
 

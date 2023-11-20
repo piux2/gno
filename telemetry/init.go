@@ -7,7 +7,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gnolang/gno/telemetry/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -16,7 +19,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
-const meterName = "gno.land"
+const (
+	meterName          = "gno.land"
+	defaultPort uint64 = 4591
+)
 
 var enabled bool
 
@@ -24,8 +30,13 @@ func IsEnabled() bool {
 	return enabled
 }
 
-func Init(ctx context.Context) error {
+func Init(ctx context.Context, port uint64) error {
 	enabled = true
+
+	if port == 0 {
+		port = defaultPort
+	}
+
 	// The exporter embeds a default OpenTelemetry Reader and
 	// implements prometheus.Collector, allowing it to be used as
 	// both a Reader and Collector.
@@ -38,18 +49,27 @@ func Init(ctx context.Context) error {
 	meter := provider.Meter(meterName)
 
 	// Start the prometheus HTTP server and pass the exporter Collector to it
-	go serveMetrics()
+	go serveMetrics(ctx, port)
 
 	// Initialize metrics to be collected.
 	return metrics.Init(ctx, meter)
 }
 
-func serveMetrics() {
-	log.Printf("serving metrics at localhost:4591/metrics")
-	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(":4591", nil) //nolint:gosec // Ignoring G114: Use of net/http serve function that has no support for setting timeouts.
-	if err != nil {
-		fmt.Printf("error serving http: %v", err)
+func serveMetrics(ctx context.Context, port uint64) {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	server := http.Server{
+		Addr:    ":" + strconv.FormatUint(uint64(port), 10),
+		Handler: mux,
+		// Nothing should need a connection for longer than a few seconds when scraping metrics.
+		BaseContext: func(net.Listener) context.Context {
+			boundedCtx, _ := context.WithTimeout(ctx, time.Second*10)
+			return boundedCtx
+		},
+	}
+
+	if err := server.ListenAndServe(); err != nil {
+		fmt.Printf("error serving metrics over http: %v", err)
 		return
 	}
 }

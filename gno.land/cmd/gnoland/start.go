@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -182,7 +183,19 @@ func execStart(c *startCfg, io commands.IO) error {
 	if strings.ToLower(os.Getenv("TELEMETRY_ENABLED")) == "true" {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		if err := telemetry.Init(ctx); err != nil {
+
+		var port uint64
+		var err error
+		portStr := os.Getenv("TELEMETRY_METRICS_PORT")
+		if portStr != "" {
+			port, err = strconv.ParseUint(portStr, 10, 0)
+		}
+
+		if err != nil {
+			panic("invalid TELEMETRY_METRICS_PORT: " + portStr)
+		}
+
+		if err = telemetry.Init(ctx, port); err != nil {
 			panic("error initialzing telemetry: " + err.Error())
 		}
 	}
