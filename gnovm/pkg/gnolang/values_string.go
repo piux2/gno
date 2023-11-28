@@ -1,6 +1,7 @@
 package gnolang
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -168,12 +169,12 @@ func (tv *TypedValue) Sprint(m *Machine) string {
 	}
 	// if implements .String(), return it.
 	if IsImplementedBy(gStringerType, tv.T) {
-		res := m.Eval(Call(Sel(&ConstExpr{TypedValue: *tv}, "String")))
+		res := m.Eval(context.Background(), Call(Sel(&ConstExpr{TypedValue: *tv}, "String")))
 		return res[0].GetString()
 	}
 	// if implements .Error(), return it.
 	if IsImplementedBy(gErrorType, tv.T) {
-		res := m.Eval(Call(Sel(&ConstExpr{TypedValue: *tv}, "Error")))
+		res := m.Eval(context.Background(), Call(Sel(&ConstExpr{TypedValue: *tv}, "Error")))
 		return res[0].GetString()
 	}
 	// print declared type

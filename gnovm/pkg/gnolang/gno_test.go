@@ -2,6 +2,7 @@ package gnolang
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -49,7 +50,7 @@ func next(i int) int {
 }`
 	n := MustParseFile("main.go", c)
 	m.RunFiles(n)
-	res := m.Eval(Call("next", "1"))
+	res := m.Eval(context.Background(), Call("next", "1"))
 	fmt.Println(res)
 }
 

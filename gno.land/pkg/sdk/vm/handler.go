@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 	abci "github.com/gnolang/gno/tm2/pkg/bft/abci/types"
 	"github.com/gnolang/gno/tm2/pkg/sdk"
 	"github.com/gnolang/gno/tm2/pkg/sdk/auth"
 	"github.com/gnolang/gno/tm2/pkg/std"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type vmHandler struct {
@@ -22,6 +25,16 @@ func NewHandler(vm *VMKeeper) vmHandler {
 }
 
 func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
+	if telemetry.IsEnabled() {
+		var spanEnder *traces.SpanEnder
+		ctx, spanEnder = traces.StartSpan(
+			ctx,
+			"vmHandler.Process",
+			attribute.String("msg.Type", msg.Type()),
+		)
+		defer spanEnder.End()
+	}
+
 	switch msg := msg.(type) {
 	case MsgAddPackage:
 		return vh.handleMsgAddPackage(ctx, msg)
@@ -35,6 +48,18 @@ func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 
 // Handle MsgAddPackage.
 func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.Result {
+	if telemetry.IsEnabled() {
+		var spanEnder *traces.SpanEnder
+		ctx, spanEnder = traces.StartSpan(
+			ctx,
+			"vmHandler.handleMsgAddPackage",
+			attribute.String("msg.Creator", msg.Creator.String()),
+			attribute.String("msg.Package.Path", msg.Package.Path),
+			attribute.String("msg.Deposit", msg.Deposit.String()),
+		)
+		defer spanEnder.End()
+	}
+
 	amount, err := std.ParseCoins("1000000ugnot") // XXX calculate
 	if err != nil {
 		return abciResult(err)
@@ -52,6 +77,19 @@ func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.
 
 // Handle MsgCall.
 func (vh vmHandler) handleMsgCall(ctx sdk.Context, msg MsgCall) (res sdk.Result) {
+	if telemetry.IsEnabled() {
+		var spanEnder *traces.SpanEnder
+		ctx, spanEnder = traces.StartSpan(
+			ctx,
+			"vmHandler.handleMsgCall",
+			attribute.String("msg.Caller", msg.Caller.String()),
+			attribute.String("msg.PkgPath", msg.PkgPath),
+			attribute.String("msg.Func", msg.Func),
+			attribute.StringSlice("msg.Args", msg.Args),
+		)
+		defer spanEnder.End()
+	}
+
 	amount, err := std.ParseCoins("1000000ugnot") // XXX calculate
 	if err != nil {
 		return abciResult(err)

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gnolang/gno/telemetry/metrics"
+	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -52,7 +53,14 @@ func Init(ctx context.Context, port uint64) error {
 	go serveMetrics(ctx, port)
 
 	// Initialize metrics to be collected.
-	return metrics.Init(ctx, meter)
+	if err := metrics.Init(ctx, meter); err != nil {
+		return err
+	}
+
+	// Tracing initialization.
+	_ = traces.Init()
+
+	return nil
 }
 
 func serveMetrics(ctx context.Context, port uint64) {

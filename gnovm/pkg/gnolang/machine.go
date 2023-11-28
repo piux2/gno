@@ -3,6 +3,7 @@ package gnolang
 // XXX rename file to machine.go.
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,8 +13,11 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/gnolang/gno/tm2/pkg/errors"
 	"github.com/gnolang/gno/tm2/pkg/std"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 //----------------------------------------
@@ -307,7 +311,7 @@ func (m *Machine) TestFunc(t *testing.T, tv TypedValue) {
 				},
 			},
 		)
-		res := m.Eval(x)
+		res := m.Eval(context.Background(), x)
 		ret := res[0].GetString()
 		if ret == "" {
 			t.Errorf("failed to execute unit test: %q", name)
@@ -602,7 +606,16 @@ func (m *Machine) RunMain() {
 // results including 0.  Otherwise it returns 1.
 // Input must not have been preprocessed, that is,
 // it should not be the child of any parent.
-func (m *Machine) Eval(x Expr) []TypedValue {
+func (m *Machine) Eval(ctx context.Context, x Expr) []TypedValue {
+	if telemetry.IsEnabled() {
+		var spanEnder *traces.SpanEnder
+		ctx, spanEnder = traces.StartSpanWithStdCtx(
+			ctx,
+			"Machine.Eval",
+		)
+		defer spanEnder.End()
+	}
+
 	if debug {
 		m.Printf("Machine.Eval(%v)\n", x)
 	}
@@ -633,7 +646,7 @@ func (m *Machine) Eval(x Expr) []TypedValue {
 	m.PushOp(OpHalt)
 	m.PushExpr(x)
 	m.PushOp(OpEval)
-	m.Run()
+	m.Run(ctx)
 	res := m.ReapValues(start)
 	return res
 }
@@ -659,7 +672,7 @@ func (m *Machine) EvalStatic(last BlockNode, x Expr) TypedValue {
 	m.PushOp(OpPopBlock)
 	m.PushExpr(x)
 	m.PushOp(OpEval)
-	m.Run()
+	m.Run(nil)
 	res := m.ReapValues(start)
 	if len(res) != 1 {
 		panic("should not happen")
@@ -688,7 +701,7 @@ func (m *Machine) EvalStaticTypeOf(last BlockNode, x Expr) Type {
 	m.PushOp(OpPopBlock)
 	m.PushExpr(x)
 	m.PushOp(OpStaticTypeOf)
-	m.Run()
+	m.Run(nil)
 	res := m.ReapValues(start)
 	if len(res) != 1 {
 		panic("should not happen")
@@ -703,7 +716,7 @@ func (m *Machine) RunStatement(s Stmt) {
 	m.PushOp(OpHalt)
 	m.PushStmt(s)
 	m.PushOp(OpExec)
-	m.Run()
+	m.Run(nil)
 }
 
 // Runs a declaration after preprocessing d.  If d was already
@@ -740,12 +753,12 @@ func (m *Machine) runDeclaration(d Decl) {
 		m.PushOp(OpHalt)
 		m.PushStmt(d)
 		m.PushOp(OpExec)
-		m.Run()
+		m.Run(nil)
 	case *TypeDecl:
 		m.PushOp(OpHalt)
 		m.PushStmt(d)
 		m.PushOp(OpExec)
-		m.Run()
+		m.Run(nil)
 	default:
 		// Do nothing for package constants.
 	}
@@ -1018,14 +1031,32 @@ const (
 //----------------------------------------
 // main run loop.
 
-func (m *Machine) Run() {
+func (m *Machine) Run(ctx context.Context) {
+	var spanEnder *traces.SpanEnder
+
+	// We don't want to overwrite the original context, so assign all new contexts to currentCtx
+	// so that ctx can still point to the original parent span.
+	currentCtx := ctx
 	for {
 		op := m.PopOp()
+
+		// Nil check is temporary until all paths are supported.
+		if telemetry.IsEnabled() && currentCtx != nil {
+			spanEnder.End()
+
+			currentCtx, spanEnder = traces.StartSpanWithStdCtx(
+				ctx,
+				"Machine.Run",
+				attribute.String("op", opToStringMap[op]),
+			)
+		}
+
 		// TODO: this can be optimized manually, even into tiers.
 		switch op {
 		/* Control operators */
 		case OpHalt:
 			m.incrCPU(OpCPUHalt)
+			spanEnder.End()
 			return
 		case OpNoop:
 			m.incrCPU(OpCPUNoop)
@@ -1345,6 +1376,9 @@ func (m *Machine) Run() {
 			panic(fmt.Sprintf("unexpected opcode %s", op.String()))
 		}
 	}
+
+	// Uncomment this if this code ever becomes reachable.
+	// spanEnder.End()
 }
 
 //----------------------------------------
