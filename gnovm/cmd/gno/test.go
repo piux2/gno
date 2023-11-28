@@ -446,7 +446,7 @@ func runTestFiles(
 		testFuncStr := fmt.Sprintf("%q", test.Name)
 
 		startedAt := time.Now()
-		eval := m.Eval(context.Background(), gno.Call("runtest", testFuncStr))
+		eval := m.Eval(gno.Call("runtest", testFuncStr))
 		duration := time.Since(startedAt)
 		dstr := fmtDuration(duration)
 

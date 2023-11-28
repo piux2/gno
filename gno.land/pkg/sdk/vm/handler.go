@@ -26,9 +26,10 @@ func NewHandler(vm *VMKeeper) vmHandler {
 
 func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpan(
-			ctx,
+		// This is the trace's entry point for the VM namespace, so initialize it with the context.
+		traces.InitNamespace(ctx.Context(), traces.NamespaceVM)
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"vmHandler.Process",
 			attribute.String("msg.Type", msg.Type()),
 		)
@@ -49,9 +50,8 @@ func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 // Handle MsgAddPackage.
 func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.Result {
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpan(
-			ctx,
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"vmHandler.handleMsgAddPackage",
 			attribute.String("msg.Creator", msg.Creator.String()),
 			attribute.String("msg.Package.Path", msg.Package.Path),
@@ -78,9 +78,8 @@ func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.
 // Handle MsgCall.
 func (vh vmHandler) handleMsgCall(ctx sdk.Context, msg MsgCall) (res sdk.Result) {
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpan(
-			ctx,
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"vmHandler.handleMsgCall",
 			attribute.String("msg.Caller", msg.Caller.String()),
 			attribute.String("msg.PkgPath", msg.PkgPath),

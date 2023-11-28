@@ -2,7 +2,6 @@ package gnolang
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -58,7 +57,7 @@ func TestGoNativeDefine(t *testing.T) {
 		Store:   store,
 	})
 	m.RunDeclaration(ImportD("foo", "test.foo"))
-	tvs := m.Eval(context.Background(), Sel(Nx("foo"), "Foo"))
+	tvs := m.Eval(Sel(Nx("foo"), "Foo"))
 	assert.Equal(t, len(tvs), 1)
 	assert.Equal(t, tvs[0].V.(TypeValue).Type, nt)
 }

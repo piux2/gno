@@ -72,6 +72,16 @@ func (vm *VMKeeper) Initialize(ms store.MultiStore) {
 	if vm.gnoStore != nil {
 		panic("should not happen")
 	}
+
+	if telemetry.IsEnabled() {
+		traces.InitNamespace(nil, traces.NamespaceVMInit)
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVMInit,
+			"VMKeeper.Initialize",
+		)
+		defer spanEnder.End()
+	}
+
 	alloc := gno.NewAllocator(maxAllocTx)
 	baseSDKStore := ms.GetStore(vm.baseKey)
 	iavlSDKStore := ms.GetStore(vm.iavlKey)
@@ -101,9 +111,8 @@ func (vm *VMKeeper) getGnoStore(ctx sdk.Context) gno.Store {
 	}
 
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpan(
-			ctx,
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"VMKeeper.getGnoStore",
 		)
 		defer spanEnder.End()
@@ -208,9 +217,8 @@ func (vm *VMKeeper) AddPackage(ctx sdk.Context, msg MsgAddPackage) error {
 // Calls calls a public Gno function (for delivertx).
 func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpan(
-			ctx,
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"VMKeeper.Call",
 		)
 		defer spanEnder.End()
@@ -291,7 +299,7 @@ func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 		}
 		m.Release()
 	}()
-	rtvs := m.Eval(ctx.Context(), xn)
+	rtvs := m.Eval(xn)
 	ctx.Logger().Info("CPUCYCLES call: ", m.Cycles)
 	for i, rtv := range rtvs {
 		res = res + rtv.String()
@@ -411,7 +419,7 @@ func (vm *VMKeeper) QueryEval(ctx sdk.Context, pkgPath string, expr string) (res
 		}
 		m.Release()
 	}()
-	rtvs := m.Eval(ctx.Context(), xx)
+	rtvs := m.Eval(xx)
 	res = ""
 	for i, rtv := range rtvs {
 		res += rtv.String()
@@ -471,7 +479,7 @@ func (vm *VMKeeper) QueryEvalString(ctx sdk.Context, pkgPath string, expr string
 		}
 		m.Release()
 	}()
-	rtvs := m.Eval(ctx.Context(), xx)
+	rtvs := m.Eval(xx)
 	if len(rtvs) != 1 {
 		return "", errors.New("expected 1 string result, got %d", len(rtvs))
 	} else if rtvs[0].T.Kind() != gno.StringKind {

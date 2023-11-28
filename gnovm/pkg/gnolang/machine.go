@@ -3,7 +3,6 @@ package gnolang
 // XXX rename file to machine.go.
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -311,7 +310,7 @@ func (m *Machine) TestFunc(t *testing.T, tv TypedValue) {
 				},
 			},
 		)
-		res := m.Eval(context.Background(), x)
+		res := m.Eval(x)
 		ret := res[0].GetString()
 		if ret == "" {
 			t.Errorf("failed to execute unit test: %q", name)
@@ -606,11 +605,10 @@ func (m *Machine) RunMain() {
 // results including 0.  Otherwise it returns 1.
 // Input must not have been preprocessed, that is,
 // it should not be the child of any parent.
-func (m *Machine) Eval(ctx context.Context, x Expr) []TypedValue {
+func (m *Machine) Eval(x Expr) []TypedValue {
 	if telemetry.IsEnabled() {
-		var spanEnder *traces.SpanEnder
-		ctx, spanEnder = traces.StartSpanWithStdCtx(
-			ctx,
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
 			"Machine.Eval",
 		)
 		defer spanEnder.End()
@@ -646,7 +644,7 @@ func (m *Machine) Eval(ctx context.Context, x Expr) []TypedValue {
 	m.PushOp(OpHalt)
 	m.PushExpr(x)
 	m.PushOp(OpEval)
-	m.Run(ctx)
+	m.Run()
 	res := m.ReapValues(start)
 	return res
 }
@@ -672,7 +670,7 @@ func (m *Machine) EvalStatic(last BlockNode, x Expr) TypedValue {
 	m.PushOp(OpPopBlock)
 	m.PushExpr(x)
 	m.PushOp(OpEval)
-	m.Run(nil)
+	m.Run()
 	res := m.ReapValues(start)
 	if len(res) != 1 {
 		panic("should not happen")
@@ -701,7 +699,7 @@ func (m *Machine) EvalStaticTypeOf(last BlockNode, x Expr) Type {
 	m.PushOp(OpPopBlock)
 	m.PushExpr(x)
 	m.PushOp(OpStaticTypeOf)
-	m.Run(nil)
+	m.Run()
 	res := m.ReapValues(start)
 	if len(res) != 1 {
 		panic("should not happen")
@@ -716,7 +714,7 @@ func (m *Machine) RunStatement(s Stmt) {
 	m.PushOp(OpHalt)
 	m.PushStmt(s)
 	m.PushOp(OpExec)
-	m.Run(nil)
+	m.Run()
 }
 
 // Runs a declaration after preprocessing d.  If d was already
@@ -753,12 +751,12 @@ func (m *Machine) runDeclaration(d Decl) {
 		m.PushOp(OpHalt)
 		m.PushStmt(d)
 		m.PushOp(OpExec)
-		m.Run(nil)
+		m.Run()
 	case *TypeDecl:
 		m.PushOp(OpHalt)
 		m.PushStmt(d)
 		m.PushOp(OpExec)
-		m.Run(nil)
+		m.Run()
 	default:
 		// Do nothing for package constants.
 	}
@@ -1031,21 +1029,25 @@ const (
 //----------------------------------------
 // main run loop.
 
-func (m *Machine) Run(ctx context.Context) {
+func (m *Machine) Run() {
 	var spanEnder *traces.SpanEnder
+	if telemetry.IsEnabled() {
+		// defer func() {
+		// 	if r := recover(); r != nil {
+		// 		spanEnder.End()
+		// 		panic(r)
+		// 	}
+		// }()
+	}
 
-	// We don't want to overwrite the original context, so assign all new contexts to currentCtx
-	// so that ctx can still point to the original parent span.
-	currentCtx := ctx
 	for {
 		op := m.PopOp()
 
-		// Nil check is temporary until all paths are supported.
-		if telemetry.IsEnabled() && currentCtx != nil {
+		if telemetry.IsEnabled() {
 			spanEnder.End()
 
-			currentCtx, spanEnder = traces.StartSpanWithStdCtx(
-				ctx,
+			spanEnder = traces.StartSpan(
+				traces.NamespaceVM,
 				"Machine.Run",
 				attribute.String("op", opToStringMap[op]),
 			)

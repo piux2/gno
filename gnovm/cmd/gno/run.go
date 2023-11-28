@@ -162,5 +162,5 @@ func runExpr(m *gno.Machine, expr string) {
 	if err != nil {
 		panic(fmt.Errorf("could not parse: %w", err))
 	}
-	m.Eval(context.Background(), ex)
+	m.Eval(ex)
 }
