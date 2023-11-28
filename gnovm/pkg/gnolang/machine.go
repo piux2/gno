@@ -1032,12 +1032,13 @@ const (
 func (m *Machine) Run() {
 	var spanEnder *traces.SpanEnder
 	if telemetry.IsEnabled() {
-		// defer func() {
-		// 	if r := recover(); r != nil {
-		// 		spanEnder.End()
-		// 		panic(r)
-		// 	}
-		// }()
+		// Ensure that spanEnder.End() is called on panic.
+		defer func() {
+			if r := recover(); r != nil {
+				spanEnder.End()
+				panic(r)
+			}
+		}()
 	}
 
 	for {

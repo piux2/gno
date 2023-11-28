@@ -27,7 +27,7 @@ func NewHandler(vm *VMKeeper) vmHandler {
 func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 	if telemetry.IsEnabled() {
 		// This is the trace's entry point for the VM namespace, so initialize it with the context.
-		traces.InitNamespace(ctx.Context(), traces.NamespaceVM)
+		traces.InitNamespace(ctx.Context(), traces.NamespaceVMProcess)
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"vmHandler.Process",
@@ -128,6 +128,17 @@ const (
 )
 
 func (vh vmHandler) Query(ctx sdk.Context, req abci.RequestQuery) (res abci.ResponseQuery) {
+	if telemetry.IsEnabled() {
+		traces.InitNamespace(ctx.Context(), traces.NamespaceVMQuery)
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVMQuery,
+			"vmHandler.Query",
+			attribute.String("req.Path", req.Path),
+			attribute.String("req.Data", string(req.Data)),
+		)
+		defer spanEnder.End()
+	}
+
 	switch secondPart(req.Path) {
 	case QueryPackage:
 		return vh.queryPackage(ctx, req)

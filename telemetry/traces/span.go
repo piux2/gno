@@ -1,17 +1,15 @@
 package traces
 
 import (
-	"context"
-
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type SpanEnder struct {
-	parentCtx context.Context
-	namespace namespace
-	span      trace.Span
+	goroutineID        int
+	parentNamespaceCtx namespaceContext
+	span               trace.Span
 }
 
 func (s *SpanEnder) End() {
@@ -19,40 +17,41 @@ func (s *SpanEnder) End() {
 		return
 	}
 
-	namespaces[s.namespace] = s.parentCtx
+	namespaces[s.goroutineID] = s.parentNamespaceCtx
 	s.span.End()
 }
 
 func StartSpan(
-	namespace namespace,
+	_ namespace,
 	name string,
 	attributes ...attribute.KeyValue,
 ) *SpanEnder {
-	parentCtx, ok := namespaces[namespace]
-	if !ok {
-		// Special case that happens during VM initialization. Change the namespace to vmInit.
-		namespace = NamespaceVMInit
-		parentCtx = namespaces[namespace]
-	}
+	id := goroutineID()
+	parentNamespaceCtx := namespaces[id]
+	// if !ok {
+	// 	// Special case that happens during VM initialization. Change the namespace to vmInit.
+	// 	namespace = NamespaceVMInit
+	// 	parentCtx = namespaces[namespace]
+	// }
 
 	// if s := trace.SpanFromContext(parentCtx); s != nil && s.IsRecording() {
 	// 	fmt.Println("still recording and overwriting")
 	// }
 
 	spanCtx, span := otel.GetTracerProvider().Tracer("gno.land").Start(
-		parentCtx,
+		parentNamespaceCtx.ctx,
 		name,
-		trace.WithAttributes(attribute.String("component", string(namespace))),
+		trace.WithAttributes(attribute.String("component", string(parentNamespaceCtx.namespace))),
 		trace.WithAttributes(attributes...),
 	)
 
 	spanEnder := &SpanEnder{
-		parentCtx: parentCtx,
-		namespace: namespace,
-		span:      span,
+		goroutineID:        id,
+		parentNamespaceCtx: parentNamespaceCtx,
+		span:               span,
 	}
 
-	namespaces[namespace] = spanCtx
+	namespaces[id] = namespaceContext{namespace: parentNamespaceCtx.namespace, ctx: spanCtx}
 	return spanEnder
 }
 
