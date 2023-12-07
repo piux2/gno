@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -41,16 +42,31 @@ func Init(ctx context.Context, port uint64) error {
 	// The exporter embeds a default OpenTelemetry Reader and
 	// implements prometheus.Collector, allowing it to be used as
 	// both a Reader and Collector.
-	exporter, err := prometheus.New()
+	// exporter, err := prometheus.New()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	// meter := provider.Meter(meterName)
+
+	// Start the prometheus HTTP server and pass the exporter Collector to it
+	// go serveMetrics(ctx, port)
+
+	// Use oltp metric exporter
+	exporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithEndpoint(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
+		otlpmetricgrpc.WithInsecure(),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	provider := metric.NewMeterProvider(metric.WithReader(metric.NewPeriodicReader(exporter)))
 	meter := provider.Meter(meterName)
 
-	// Start the prometheus HTTP server and pass the exporter Collector to it
-	go serveMetrics(ctx, port)
+	// otel.SetMeterProvider(meterProvider)
 
 	// Initialize metrics to be collected.
 	if err := metrics.Init(ctx, meter); err != nil {
