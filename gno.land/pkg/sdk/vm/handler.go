@@ -25,7 +25,7 @@ func NewHandler(vm *VMKeeper) vmHandler {
 }
 
 func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		// This is the trace's entry point for the VM namespace, so initialize it with the context.
 		traces.InitNamespace(ctx.Context(), traces.NamespaceVMProcess)
 		spanEnder := traces.StartSpan(
@@ -49,7 +49,7 @@ func (vh vmHandler) Process(ctx sdk.Context, msg std.Msg) sdk.Result {
 
 // Handle MsgAddPackage.
 func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.Result {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"vmHandler.handleMsgAddPackage",
@@ -77,7 +77,7 @@ func (vh vmHandler) handleMsgAddPackage(ctx sdk.Context, msg MsgAddPackage) sdk.
 
 // Handle MsgCall.
 func (vh vmHandler) handleMsgCall(ctx sdk.Context, msg MsgCall) (res sdk.Result) {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"vmHandler.handleMsgCall",
@@ -128,7 +128,7 @@ const (
 )
 
 func (vh vmHandler) Query(ctx sdk.Context, req abci.RequestQuery) (res abci.ResponseQuery) {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		traces.InitNamespace(ctx.Context(), traces.NamespaceVMQuery)
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVMQuery,

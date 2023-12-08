@@ -606,7 +606,7 @@ func (m *Machine) RunMain() {
 // Input must not have been preprocessed, that is,
 // it should not be the child of any parent.
 func (m *Machine) Eval(x Expr) []TypedValue {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"Machine.Eval",
@@ -1031,7 +1031,7 @@ const (
 
 func (m *Machine) Run() {
 	var spanEnder *traces.SpanEnder
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		// Ensure that spanEnder.End() is called on panic.
 		defer func() {
 			if r := recover(); r != nil {
@@ -1044,7 +1044,7 @@ func (m *Machine) Run() {
 	for {
 		op := m.PopOp()
 
-		if telemetry.IsEnabled() {
+		if telemetry.TracesEnabled() {
 			spanEnder.End()
 
 			spanEnder = traces.StartSpan(

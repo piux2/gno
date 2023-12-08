@@ -987,7 +987,7 @@ func (cs *ConsensusState) createProposalBlock() (block *types.Block, blockParts 
 		return
 	}
 
-	if telemetry.IsEnabled() {
+	if telemetry.MetricsEnabled() {
 		startTime := time.Now()
 		defer func(t time.Time) {
 			metrics.BuildBlockTimer.Collect(time.Since(t).Milliseconds())

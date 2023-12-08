@@ -3,9 +3,13 @@ package metrics
 import (
 	"context"
 	"math/rand"
-	"os"
 
+	"github.com/gnolang/gno/telemetry/exporter"
+	"github.com/gnolang/gno/telemetry/options"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/metric"
+	sdkMetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
 var (
@@ -16,17 +20,26 @@ var (
 	BuildBlockTimer  Int64Collector
 )
 
-func Init(setCtx context.Context, meter metric.Meter) error {
+func Init(setCtx context.Context, config options.Config) error {
+	if config.ExporterEndpoint == "" {
+		return exporter.ErrEndpointNotSet
+	}
+
 	ctx = setCtx
 
-	// Setting fake metrics results in choosing random values in a given range, disregarding
-	// th evalues passed to Collect().
-	//
-	// DBTODO: clean up the fake metrics code to make it easier to compose future metric types.
-	var useFakeMetrics bool
-	if value := os.Getenv("FAKE_METRICS"); value == "true" {
-		useFakeMetrics = true
+	// Use oltp metric exporter
+	exporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithEndpoint(config.ExporterEndpoint),
+		otlpmetricgrpc.WithInsecure(),
+	)
+	if err != nil {
+		return err
 	}
+
+	provider := sdkMetric.NewMeterProvider(sdkMetric.WithReader(sdkMetric.NewPeriodicReader(exporter)))
+	otel.SetMeterProvider(provider)
+	meter := provider.Meter(config.MeterName)
 
 	broadcastTxTimer, err := meter.Int64Histogram(
 		"broadcast_tx_hist",
@@ -39,7 +52,7 @@ func Init(setCtx context.Context, meter metric.Meter) error {
 	}
 	BroadcastTxTimer = Int64Histogram{
 		Int64Histogram: broadcastTxTimer,
-		useFakeMetrics: useFakeMetrics,
+		useFakeMetrics: config.UseFakeMetrics,
 		fakeRangeStart: 5,
 		fakeRangeEnd:   250,
 	}
@@ -55,7 +68,7 @@ func Init(setCtx context.Context, meter metric.Meter) error {
 	}
 	BuildBlockTimer = Int64Histogram{
 		Int64Histogram: buildBlockTimer,
-		useFakeMetrics: useFakeMetrics,
+		useFakeMetrics: config.UseFakeMetrics,
 		fakeRangeStart: 0,
 		fakeRangeEnd:   150,
 	}

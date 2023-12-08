@@ -73,7 +73,7 @@ func (vm *VMKeeper) Initialize(ms store.MultiStore) {
 		panic("should not happen")
 	}
 
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		traces.InitNamespace(nil, traces.NamespaceVMInit)
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVMInit,
@@ -110,7 +110,7 @@ func (vm *VMKeeper) getGnoStore(ctx sdk.Context) gno.Store {
 		panic("VMKeeper must first be initialized")
 	}
 
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"VMKeeper.getGnoStore",
@@ -216,7 +216,7 @@ func (vm *VMKeeper) AddPackage(ctx sdk.Context, msg MsgAddPackage) error {
 
 // Calls calls a public Gno function (for delivertx).
 func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
-	if telemetry.IsEnabled() {
+	if telemetry.TracesEnabled() {
 		spanEnder := traces.StartSpan(
 			traces.NamespaceVM,
 			"VMKeeper.Call",

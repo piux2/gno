@@ -263,7 +263,7 @@ func (sw *Switch) Broadcast(chID byte, msgBytes []byte) chan bool {
 	go func() {
 		wg.Wait()
 		close(successChan)
-		if telemetry.IsEnabled() {
+		if telemetry.MetricsEnabled() {
 			metrics.BroadcastTxTimer.Collect(time.Since(startTime).Milliseconds())
 		}
 	}()
