@@ -5,7 +5,10 @@ import (
 	"math/big"
 	"reflect"
 
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/gnolang/gno/tm2/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // In the case of a *FileSet, some declaration steps have to happen
@@ -124,6 +127,15 @@ func Preprocess(store Store, ctx BlockNode, n Node) Node {
 		defer func() {
 			preprocessing -= 1
 		}()
+	}
+
+	if telemetry.TracesEnabled() {
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
+			"Preprocess",
+			attribute.Int("preprocessing", preprocessing),
+		)
+		defer spanEnder.End()
 	}
 
 	if ctx == nil {

@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 	vmm "github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	gno "github.com/gnolang/gno/gnovm/pkg/gnolang"
 	"github.com/gnolang/gno/gnovm/pkg/gnomod"
+	"github.com/gnolang/gno/telemetry"
 	"github.com/gnolang/gno/tm2/pkg/amino"
 	abci "github.com/gnolang/gno/tm2/pkg/bft/abci/types"
 	"github.com/gnolang/gno/tm2/pkg/bft/node"
@@ -121,9 +124,47 @@ func (c *startCfg) RegisterFlags(fs *flag.FlagSet) {
 	)
 }
 
+func initTelemetry(ctx context.Context) error {
+	var options []telemetry.Option
+
+	if os.Getenv("TELEM_METRICS_ENABLED") == "true" {
+		options = append(options, telemetry.WithOptionMetricsEnabled())
+	}
+	if os.Getenv("TELEM_TRACES_ENABLED") == "true" {
+		options = append(options, telemetry.WithOptionTracesEnabled())
+	}
+	if portString := os.Getenv("TELEM_PORT"); portString != "" {
+		port, err := strconv.ParseUint(portString, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid port: %w", err)
+		}
+
+		options = append(options, telemetry.WithOptionPort(port))
+	}
+	if os.Getenv("TELEM_USE_FAKE_METRICS") == "true" {
+		options = append(options, telemetry.WithOptionFakeMetrics())
+	}
+
+	// The string options can be added by default. Their absence would yield the same result
+	// as if the option were excluded altogether.
+	options = append(options, telemetry.WithOptionMeterName(os.Getenv("TELEM_METER_NAME")))
+	options = append(options, telemetry.WithOptionExporterEndpoint(os.Getenv("TELEM_EXPORTER_ENDPOINT")))
+	options = append(options, telemetry.WithOptionServiceName(os.Getenv("TELEM_SERVICE_NAME")))
+
+	return telemetry.Init(ctx, options...)
+}
+
 func execStart(c startCfg, args []string) error {
 	rootDir := c.rootDir
 	tmcfg := &c.baseCfg.tmConfig
+
+  
+  // Attempt to initialize telemetry. If the enviroment variables required to initialize
+	// telemetry are not set, then the initialization will do nothing.
+	ctx := context.Background()
+	if err := initTelemetry(ctx); err != nil {
+		return fmt.Errorf("error initializing telemetry: %w", err)
+	}
 
 	// create priv validator first.
 	// need it to generate genesis.json

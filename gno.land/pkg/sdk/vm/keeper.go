@@ -9,6 +9,8 @@ import (
 
 	gno "github.com/gnolang/gno/gnovm/pkg/gnolang"
 	"github.com/gnolang/gno/gnovm/stdlibs"
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/gnolang/gno/tm2/pkg/errors"
 	"github.com/gnolang/gno/tm2/pkg/sdk"
 	"github.com/gnolang/gno/tm2/pkg/sdk/auth"
@@ -70,6 +72,16 @@ func (vm *VMKeeper) Initialize(ms store.MultiStore) {
 	if vm.gnoStore != nil {
 		panic("should not happen")
 	}
+
+	if telemetry.TracesEnabled() {
+		traces.InitNamespace(nil, traces.NamespaceVMInit)
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVMInit,
+			"VMKeeper.Initialize",
+		)
+		defer spanEnder.End()
+	}
+
 	alloc := gno.NewAllocator(maxAllocTx)
 	baseSDKStore := ms.GetStore(vm.baseKey)
 	iavlSDKStore := ms.GetStore(vm.iavlKey)
@@ -97,6 +109,15 @@ func (vm *VMKeeper) getGnoStore(ctx sdk.Context) gno.Store {
 	if vm.gnoStore == nil {
 		panic("VMKeeper must first be initialized")
 	}
+
+	if telemetry.TracesEnabled() {
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
+			"VMKeeper.getGnoStore",
+		)
+		defer spanEnder.End()
+	}
+
 	switch ctx.Mode() {
 	case sdk.RunTxModeDeliver:
 		// swap sdk store of existing gnoStore.
@@ -195,6 +216,14 @@ func (vm *VMKeeper) AddPackage(ctx sdk.Context, msg MsgAddPackage) error {
 
 // Calls calls a public Gno function (for delivertx).
 func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
+	if telemetry.TracesEnabled() {
+		spanEnder := traces.StartSpan(
+			traces.NamespaceVM,
+			"VMKeeper.Call",
+		)
+		defer spanEnder.End()
+	}
+
 	pkgPath := msg.PkgPath // to import
 	fnc := msg.Func
 	store := vm.getGnoStore(ctx)

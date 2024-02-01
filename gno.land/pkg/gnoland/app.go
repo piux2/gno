@@ -131,6 +131,7 @@ func NewApp(dataRootDir string, skipFailingGenesisTxs bool, logger log.Logger, m
 	}
 
 	cfg.Logger = logger
+	cfg.SkipFailingGenesisTxs = skipFailingGenesisTxs
 
 	return NewAppWithOptions(cfg)
 }
