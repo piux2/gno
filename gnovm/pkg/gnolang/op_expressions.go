@@ -19,6 +19,11 @@ func (m *Machine) doOpIndex1() {
 	}
 	iv := m.PopValue()   // index
 	xv := m.PeekValue(1) // x
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpIndex1, %v\n", xv)
+	}
+
 	switch ct := baseOf(xv.T).(type) {
 	case *MapType:
 		mv := xv.V.(*MapValue)
@@ -47,6 +52,11 @@ func (m *Machine) doOpIndex2() {
 	}
 	iv := m.PeekValue(1) // index
 	xv := m.PeekValue(2) // x
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpIndex2, %v\n", xv)
+	}
+
 	switch ct := baseOf(xv.T).(type) {
 	case *MapType:
 		vt := ct.Value
@@ -80,13 +90,23 @@ func (m *Machine) doOpIndex2() {
 
 func (m *Machine) doOpSelector() {
 	sx := m.PopExpr().(*SelectorExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpSelector, %v\n", sx)
+	}
+
+
 	xv := m.PeekValue(1)
+
 	res := xv.GetPointerTo(m.Alloc, m.Store, sx.Path)
 	*xv = res.Deref() // reuse as result
 }
 
 func (m *Machine) doOpSlice() {
 	sx := m.PopExpr().(*SliceExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpSlice, %v\n", sx)
+	}
+
 	var low, high, max int = -1, -1, -1
 	// max
 	if sx.Max != nil {
@@ -142,6 +162,10 @@ func (m *Machine) doOpSlice() {
 // deref, but the result is a pointer-to type.
 func (m *Machine) doOpStar() {
 	xv := m.PopValue()
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpStar, %v\n", xv)
+	}
+
 	switch bt := baseOf(xv.T).(type) {
 	case *PointerType:
 		pv := xv.V.(PointerValue)
@@ -179,6 +203,11 @@ func (m *Machine) doOpStar() {
 // XXX this is wrong, for var i interface{}; &i is *interface{}.
 func (m *Machine) doOpRef() {
 	rx := m.PopExpr().(*RefExpr)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpRef, %v\n", rx)
+	}
+
 	m.Alloc.AllocatePointer()
 	xv := m.PopAsPointer(rx.X)
 	if nv, ok := xv.TV.V.(*NativeValue); ok {
@@ -209,6 +238,12 @@ func (m *Machine) doOpTypeAssert1() {
 	xt := xv.T
 
 	if t.Kind() == InterfaceKind { // is interface assert
+
+		if bm.OpCodeDetails && bm.Start {
+			log.Printf("benchmark.OpTypeAssert1, interface %v\n", xv)
+		}
+
+
 		if it, ok := baseOf(t).(*InterfaceType); ok {
 			// t is Gno interface.
 			// assert that x implements type.
@@ -250,6 +285,9 @@ func (m *Machine) doOpTypeAssert1() {
 			panic("should not happen")
 		}
 	} else { // is concrete assert
+		if bm.OpCodeDetails && bm.Start {
+			log.Printf("benchmark.OpTypeAssert1, concrete type %v\n", xv)
+		}
 		tid := t.TypeID()
 		xtid := xt.TypeID()
 		// assert that x is of type.
@@ -279,6 +317,11 @@ func (m *Machine) doOpTypeAssert2() {
 	xt := xv.T
 
 	if t.Kind() == InterfaceKind { // is interface assert
+
+		if bm.OpCodeDetails && bm.Start {
+					log.Printf("benchmark.OpTypeAssert2, interface %v\n", xv)
+		}
+
 		if it, ok := baseOf(t).(*InterfaceType); ok {
 			// t is Gno interface.
 			// assert that x implements type.
@@ -313,6 +356,9 @@ func (m *Machine) doOpTypeAssert2() {
 			panic("should not happen")
 		}
 	} else { // is concrete assert
+		if bm.OpCodeDetails && bm.Start {
+					log.Printf("benchmark.OpTypeAssert2, concrete type %v\n", xv)
+		}
 		tid := t.TypeID()
 		xtid := xt.TypeID()
 		// assert that x is of type.
@@ -333,6 +379,10 @@ func (m *Machine) doOpTypeAssert2() {
 func (m *Machine) doOpCompositeLit() {
 	// composite lit expr
 	x := m.PeekExpr(1).(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpCompositeLit, %v\n", x)
+	}
+
 	// composite type
 	t := m.PeekValue(1).V.(TypeValue).Type
 	// push elements
@@ -422,6 +472,9 @@ func (m *Machine) doOpCompositeLit() {
 func (m *Machine) doOpArrayLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpArrayLit, %v\n", x)
+	}
 	ne := len(x.Elts)
 	// peek array type.
 	at := m.PeekValue(1 + ne).V.(TypeValue).Type
@@ -481,6 +534,9 @@ func (m *Machine) doOpArrayLit() {
 func (m *Machine) doOpSliceLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpSliceLit, %v\n", x)
+	}
 	el := len(x.Elts)
 	// peek slice type.
 	st := m.PeekValue(1 + el).V.(TypeValue).Type
@@ -507,6 +563,9 @@ func (m *Machine) doOpSliceLit() {
 func (m *Machine) doOpSliceLit2() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpSliceLit2, %v\n", x)
+	}
 	el := len(x.Elts)
 	tvs := m.PopValues(el * 2)
 	// peek slice type.
@@ -556,6 +615,9 @@ func (m *Machine) doOpSliceLit2() {
 
 func (m *Machine) doOpMapLit() {
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpMapLit, %v\n", x)
+	}
 	ne := len(x.Elts)
 	// peek map type.
 	mt := m.PeekValue(1 + ne*2).V.(TypeValue).Type
@@ -595,6 +657,9 @@ func (m *Machine) doOpMapLit() {
 func (m *Machine) doOpStructLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpStructLit, %v\n", x)
+	}
 	el := len(x.Elts) // may be incomplete
 	// peek struct type.
 	xt := m.PeekValue(1 + el).V.(TypeValue).Type

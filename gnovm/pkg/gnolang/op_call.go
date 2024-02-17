@@ -174,11 +174,15 @@ func (m *Machine) doOpCall() {
 }
 
 func (m *Machine) doOpCallNativeBody() {
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpCallNativeBody, %v\n", m.LastFrame().Func)
+	}
 	m.LastFrame().Func.nativeBody(m)
 }
 
 func (m *Machine) doOpCallDeferNativeBody() {
 	fv := m.PopValue().V.(*FuncValue)
+  log.Printf("benchmark.OpCallDeferNativeBody, %v\n", fv)
 	fv.nativeBody(m)
 }
 
@@ -431,6 +435,9 @@ func (m *Machine) doOpPanic1() {
 }
 
 func (m *Machine) doOpPanic2() {
+	if bm.OpCodeDetails && bm.Start {
+		log.Println("benchmark.OpPanic2")
+	}
 	if len(m.Exceptions) == 0 {
 		// Recovered from panic
 		m.PushOp(OpReturnFromBlock)

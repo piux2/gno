@@ -10,6 +10,10 @@ import (
 
 func (m *Machine) doOpFieldType() {
 	x := m.PopExpr().(*FieldTypeExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpFieldType, %v\n", x)
+	}
+
 	t := m.PopValue().V.(TypeValue).Type
 	n := x.Name
 	tag := Tag("")
@@ -29,6 +33,9 @@ func (m *Machine) doOpFieldType() {
 
 func (m *Machine) doOpArrayType() {
 	x := m.PopExpr().(*ArrayTypeExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpArrayType, %v\n", x)
+	}
 	t := &ArrayType{}
 	if x.Len == nil { // variadic array lit
 		t.Vrd = true
@@ -62,6 +69,10 @@ func (m *Machine) doOpArrayType() {
 
 func (m *Machine) doOpSliceType() {
 	x := m.PopExpr().(*SliceTypeExpr)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpSliceType, %v\n", x)
+	}
 	tv := m.PeekValue(1) // re-use as result.
 	t := &SliceType{
 		Elt: tv.GetType(),
@@ -102,6 +113,12 @@ func (m *Machine) doOpFuncType() {
 
 func (m *Machine) doOpMapType() {
 	vtv := m.PopValue()
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpMapType, %v\n", vtv)
+	}
+
+
 	tv := m.PeekValue(1) // re-use as result.
 	mt := &MapType{
 		Key:   tv.GetType(),
@@ -115,6 +132,10 @@ func (m *Machine) doOpMapType() {
 
 func (m *Machine) doOpStructType() {
 	x := m.PopExpr().(*StructTypeExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpStructType, %v\n", x)
+	}
+
 	// pop fields
 	ftvs := m.PopValues(len(x.Fields))
 	// allocate (minimum) space for fields
@@ -138,6 +159,10 @@ func (m *Machine) doOpStructType() {
 
 func (m *Machine) doOpInterfaceType() {
 	x := m.PopExpr().(*InterfaceTypeExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpInterfaceType, %v\n", x)
+	}
+
 	// allocate space
 	methods := make([]FieldType, len(x.Methods))
 	// pop methods
@@ -160,6 +185,11 @@ func (m *Machine) doOpInterfaceType() {
 
 func (m *Machine) doOpChanType() {
 	x := m.PopExpr().(*ChanTypeExpr)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpChanType, %v\n", x)
+	}
+
 	tv := m.PeekValue(1) // re-use as result.
 	ct := &ChanType{
 		Dir: x.Dir,
@@ -173,6 +203,10 @@ func (m *Machine) doOpChanType() {
 
 func (m *Machine) doOpMaybeNativeType() {
 	tv := m.PeekValue(1) // re-use as result.
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpMaybeNativeType, %v\n", tv)
+	}
+
 	mnt := &MaybeNativeType{
 		Type: tv.GetType(),
 	}
@@ -187,6 +221,10 @@ func (m *Machine) doOpMaybeNativeType() {
 // already swapped for *ConstExpr in the preprocessor.  If not, panics.
 func (m *Machine) doOpStaticTypeOf() {
 	x := m.PopExpr()
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpStaticTypeOf, %v\n", x)
+	}
+
 	switch x := x.(type) {
 	case *NameExpr:
 		// NOTE: duplicated from doOpEval

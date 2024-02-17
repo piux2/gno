@@ -2,9 +2,11 @@ package gnolang
 
 import (
 	"fmt"
+	"log"
 	"math/big"
 
 	"github.com/cockroachdb/apd/v3"
+	bm "github.com/gnolang/gno/benchmarking"
 )
 
 func (m *Machine) doOpUpos() {
@@ -12,6 +14,10 @@ func (m *Machine) doOpUpos() {
 	if debug {
 		debug.Printf("doOpUpos(%v)\n", ux)
 	}
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpUpos, %v\n", ux)
+	}
+
 	// nothing to do, +x is just x?
 }
 
@@ -20,6 +26,11 @@ func (m *Machine) doOpUneg() {
 	if debug {
 		debug.Printf("doOpUneg(%v)\n", ux)
 	}
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpUneg, %v\n", ux)
+	}
+
 	xv := m.PeekValue(1)
 
 	// Switch on the base type.
@@ -70,6 +81,11 @@ func (m *Machine) doOpUnot() {
 	if debug {
 		debug.Printf("doOpUnot(%v)\n", ux)
 	}
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpUnot, %v\n", ux)
+	}
+
 	xv := m.PeekValue(1)
 
 	// Switch on the base type.
@@ -86,6 +102,9 @@ func (m *Machine) doOpUxor() {
 	ux := m.PopExpr().(*UnaryExpr)
 	if debug {
 		debug.Printf("doOpUxor(%v)\n", ux)
+	}
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpUxor, %v\n", ux)
 	}
 	xv := m.PeekValue(1)
 
@@ -121,5 +140,8 @@ func (m *Machine) doOpUxor() {
 }
 
 func (m *Machine) doOpUrecv() {
+	if bm.OpCodeDetails && bm.Start {
+		log.Println("benchmark.OpUrecv, panic not implemented")
+	}
 	panic("not yet implemented")
 }

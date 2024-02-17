@@ -14,6 +14,10 @@ import (
 
 func (m *Machine) doOpBinary1() {
 	bx := m.PopExpr().(*BinaryExpr)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpBinary1, %v\n", bx)
+	}
 	switch bx.Op {
 	case LAND:
 		res := m.PeekValue(1) // re-use
@@ -49,7 +53,9 @@ func (m *Machine) doOpLor() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpLand, %v Lor %v\n", lv, rv)
+	}
 	// set result in lv.
 	if isUntyped(lv.T) {
 		lv.T = rv.T
@@ -64,7 +70,9 @@ func (m *Machine) doOpLand() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpLand, %v && %v\n", lv, rv)
+	}
 	// set result in lv.
 	if isUntyped(lv.T) {
 		lv.T = rv.T
@@ -84,6 +92,9 @@ func (m *Machine) doOpEql() {
 
 	// set result in lv.
 	res := isEql(m.Store, lv, rv)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpEql, %v == %v is %v\n", lv, rv, res)
+	}
 	lv.T = UntypedBoolType
 	lv.V = nil
 	lv.SetBool(res)
@@ -101,6 +112,9 @@ func (m *Machine) doOpNeq() {
 
 	// set result in lv.
 	res := !isEql(m.Store, lv, rv)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpNeq, %v != %v is %v\n", lv, rv, res)
+	}
 	lv.T = UntypedBoolType
 	lv.V = nil
 	lv.SetBool(res)
@@ -118,6 +132,11 @@ func (m *Machine) doOpLss() {
 
 	// set the result in lv.
 	res := isLss(lv, rv)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpLss, %v < %v is %v\n", lv, rv, res)
+	}
+
 	lv.T = UntypedBoolType
 	lv.V = nil
 	lv.SetBool(res)
@@ -135,6 +154,10 @@ func (m *Machine) doOpLeq() {
 
 	// set the result in lv.
 	res := isLeq(lv, rv)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpLeq, %v <= %v is %v\n", lv, rv, res)
+	}
+
 	lv.T = UntypedBoolType
 	lv.V = nil
 	lv.SetBool(res)
@@ -152,7 +175,7 @@ func (m *Machine) doOpGtr() {
 	// set the result in lv.
 	res := isGtr(lv, rv)
 	if bm.OpCodeDetails && bm.Start {
-		log.Printf("benchmark.OpGtr, %v | %v | %v\n", lv, rv, res)
+		log.Printf("benchmark.OpGtr, %v > %v is %v\n", lv, rv, res)
 	}
 	lv.T = UntypedBoolType
 	lv.V = nil
@@ -171,6 +194,11 @@ func (m *Machine) doOpGeq() {
 
 	// set the result in lv.
 	res := isGeq(lv, rv)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpGeq, %v >= %v is %v\n", lv, rv, res)
+	}
+
 	lv.T = UntypedBoolType
 	lv.V = nil
 	lv.SetBool(res)
@@ -185,7 +213,9 @@ func (m *Machine) doOpAdd() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpAdd, %v + %v\n", lv , rv)
+	}
 	// add rv to lv.
 	addAssign(m.Alloc, lv, rv)
 }
@@ -199,7 +229,9 @@ func (m *Machine) doOpSub() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpSub, %v - %v\n", lv , rv)
+	}
 	// sub rv from lv.
 	subAssign(lv, rv)
 }
@@ -214,6 +246,9 @@ func (m *Machine) doOpBor() {
 		assertSameTypes(lv.T, rv.T)
 	}
 
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpBor, %v | %v\n", lv , rv)
+	}
 	// lv | rv
 	borAssign(lv, rv)
 }
@@ -227,7 +262,9 @@ func (m *Machine) doOpXor() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpXor, %v ^ %v\n", lv , rv)
+	}
 	// lv ^ rv
 	xorAssign(lv, rv)
 }
@@ -241,7 +278,9 @@ func (m *Machine) doOpMul() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpMul, %v * %v\n", lv , rv)
+	}
 	// lv * rv
 	mulAssign(lv, rv)
 }
@@ -255,7 +294,9 @@ func (m *Machine) doOpQuo() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpQuo, %v / %v\n", lv , rv)
+	}
 	// lv / rv
 	quoAssign(lv, rv)
 }
@@ -269,7 +310,9 @@ func (m *Machine) doOpRem() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpRem, %v %% %v\n", lv , rv)
+	}
 	// lv % rv
 	remAssign(lv, rv)
 }
@@ -284,6 +327,9 @@ func (m *Machine) doOpShl() {
 		if rv.T.Kind() != UintKind {
 			panic("should not happen")
 		}
+	}
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpShl, %v << %v\n", lv , rv)
 	}
 
 	// lv << rv
@@ -301,7 +347,9 @@ func (m *Machine) doOpShr() {
 			panic("should not happen")
 		}
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpShr, %v >> %v\n", lv, rv)
+	}
 	// lv >> rv
 	shrAssign(lv, rv)
 }
@@ -315,7 +363,9 @@ func (m *Machine) doOpBand() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpBand, %v & %v\n", lv, rv)
+	}
 	// lv & rv
 	bandAssign(lv, rv)
 }
@@ -329,7 +379,9 @@ func (m *Machine) doOpBandn() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpBandn, %v &^ %v\n", lv, rv)
+	}
 	// lv &^ rv
 	bandnAssign(lv, rv)
 }
