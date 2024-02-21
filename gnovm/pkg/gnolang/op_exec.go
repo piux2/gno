@@ -842,6 +842,10 @@ func (m *Machine) doOpIfCond() {
 func (m *Machine) doOpTypeSwitch() {
 	ss := m.PopStmt().(*SwitchStmt)
 	xv := m.PopValue()
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpTypeSwitch, %v, %v\n", ss, xv)
+	}
+
 	xtid := TypeID("")
 	if xv.T != nil {
 		xtid = xv.T.TypeID()
