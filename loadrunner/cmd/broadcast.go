@@ -70,7 +70,7 @@ func (b BroadcastTask) Execute() error {
 
 func broadcast(args []string) error {
 
-	var numWorkers int = 1000
+	var numWorkers int = 500
 
 	kb, err := NewEagerKeybase(RootDir)
 	if err != nil {
