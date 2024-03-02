@@ -78,5 +78,5 @@ func IsTraceOp() bool {
 }
 
 func IsTraceStore() bool {
-	return globalTraceFilter == traceFilterNone || globalTraceFilter == traceFilterOp
+	return globalTraceFilter == traceFilterNone || globalTraceFilter == traceFilterStore
 }

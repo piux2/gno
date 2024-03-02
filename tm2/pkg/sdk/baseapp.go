@@ -16,6 +16,8 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/log"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/gnolang/gno/tm2/pkg/store"
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 )
 
 // Key to store the consensus params in the main store.
@@ -373,6 +375,16 @@ func splitPath(requestPath string) (path []string) {
 // Query implements the ABCI interface. It delegates to CommitMultiStore if it
 // implements Queryable.
 func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
+
+	if telemetry.TracesEnabled() {
+		traces.InitNamespace(nil, traces.NamespaceQuery)
+		spanEnder := traces.StartSpan(
+			"Query.Initialize",
+		)
+		defer spanEnder.End()
+	}
+
+
 	path := splitPath(req.Path)
 	if len(path) == 0 {
 		msg := "no query path provided"
@@ -555,6 +567,14 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 //
 // NOTE:CheckTx does not run the actual Msg handler function(s).
 func (app *BaseApp) CheckTx(req abci.RequestCheckTx) (res abci.ResponseCheckTx) {
+	if telemetry.TracesEnabled() {
+		traces.InitNamespace(nil, traces.NamespaceCheckTx)
+		spanEnder := traces.StartSpan(
+			"CheckTx.Initialize",
+		)
+		defer spanEnder.End()
+	}
+
 	var tx Tx
 	err := amino.Unmarshal(req.Tx, &tx)
 	if err != nil {
@@ -571,6 +591,14 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) (res abci.ResponseCheckTx) 
 
 // DeliverTx implements the ABCI interface.
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) (res abci.ResponseDeliverTx) {
+	if telemetry.TracesEnabled() {
+		traces.InitNamespace(nil, traces.NamespaceDeliverTx)
+		spanEnder := traces.StartSpan(
+			"DeliverTx.Initialize",
+		)
+		defer spanEnder.End()
+	}
+
 	var tx Tx
 	err := amino.Unmarshal(req.Tx, &tx)
 	if err != nil {
