@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/gnolang/gno/tm2/pkg/store"
-	"github.com/gnolang/overflow"
+
 )
 
 // Keeps track of in-memory allocations.
@@ -109,12 +109,7 @@ func (alloc *Allocator) Allocate(size int64) {
 		// this can happen for map items just prior to assignment.
 		return
 	}
-	// consume gas even if it could failed due to exceed the maxBytes
-	gm := alloc.vmGasMeter
-	if gm != nil && *gm != nil {
-		gas := overflow.Mul64p(size, GasFactorAlloc)
-		(*gm).ConsumeGas(gas, "MemAlloc")
-	}
+
 	alloc.bytes += size
 	if alloc.bytes > alloc.maxBytes {
 		panic("allocation limit exceeded")
