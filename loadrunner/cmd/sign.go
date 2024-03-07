@@ -20,7 +20,9 @@ import (
 
 const (
 	ChainID = "dev"
-	numMsgs = 1    // number messages per tx
+	numMsgs = 5 // number messages per tx
+	gas = 100
+	fee = 5
 )
 
 type signCfg struct{}
@@ -43,7 +45,7 @@ func newSignCmd() *commands.Command {
 }
 
 type SignTxTask struct {
-	SignerKey      string
+	SignerKey       string
 	Account         std.BaseAccount
 	encryptPassword string
 	keybase         *EagerKeybase
@@ -93,15 +95,14 @@ func sign(num string) error {
 		return nil
 	}
 	// check and update each account sequence	against the node
-	signTasks, err := prepareSignTasks(kb,txbase, n)
+	signTasks, err := prepareSignTasks(kb, txbase, n)
 	if err != nil {
 		return err
 	}
 
-	if l :=len(signTasks) ; n > l {
-		n  = l
+	if l := len(signTasks); n > l {
+		n = l
 	}
-
 
 	var wg sync.WaitGroup
 
@@ -121,9 +122,7 @@ func sign(num string) error {
 
 	// jobs
 	wg.Add(n)
-	for _, t := range signTasks{
-
-
+	for _, t := range signTasks {
 		tasks <- t
 	}
 
@@ -138,19 +137,19 @@ func sign(num string) error {
 
 func newTxs() []std.Tx {
 	// TODO: max gas, max tx size and max msg size
-	pkgPath := "gno.land/r/x/benchmark/load"
+	pkgPath := "gno.land/r/load"
 	fn := "AddPost"
-	args := []string{"hello","world"}
-/*
-	args := []string{
-		"Weather Outlook: Nov 1 - Nov 7, 2024: A Week of Changing Skies", "Today's comprehensive weather forecast promises a dynamic and engaging experience for all, blending a mix of atmospheric conditions that cater to a wide array of preferences and activities. As dawn breaks, residents can anticipate a refreshing and crisp morning with temperatures gently rising from a cool 55°F, creating an invigorating start to the day. The early hours will see a soft, dew-kissed breeze whispering through the streets, carrying the fresh scent of blooming flowers and newly cut grass, setting a serene tone for the day ahead.\n\nBy mid-morning, the sun, in its splendid glory, will begin to assert its presence, gradually elevating temperatures to a comfortable 75°F. The skies, adorned with a few scattered clouds, will paint a picturesque backdrop, ideal for outdoor enthusiasts eager to embrace the day's warmth. Whether it's a leisurely stroll in the park, an adventurous hike through nearby trails, or simply enjoying a quiet moment in the sun, the conditions will be perfectly aligned for an array of outdoor pursuits.\n\nAs the day progresses towards noon, expect the gentle morning breeze to evolve into a more pronounced wind, adding a refreshing counterbalance to the midday sun's warmth. This perfect harmony between the breeze and sunlight offers an optimal environment for sailing and kite-flying, providing just the right amount of lift and drift for an exhilarating experience.\n\nThe afternoon promises a continuation of the day's pleasant conditions, with the sun reigning supreme and the temperature peaking at a delightful 80°F. It's an ideal time for community sports, gardening, or perhaps an outdoor picnic, allowing friends and family to gather and make the most of the splendid weather.\n\nHowever, as we transition into the evening, anticipate a slight shift in the atmosphere. The temperature will gently dip, creating a cool and comfortable setting, perfect for al fresco dining or a serene walk under the starlit sky. The night will conclude with a mild 60°F, ensuring a peaceful and restful end to a day filled with diverse weather experiences.\n\nIn summary, today's weather forecast offers something for everyone, from the early risers seeking tranquility in the morning's embrace to the night owls looking to unwind under the cool evening air. It's a day to revel in the outdoors, pursue a myriad of activities, and simply enjoy the natural beauty that surrounds us.",
-	}
-*/
+	//args := []string{"hello", "world"}
+
+		args := []string{
+			"Weather Outlook: Nov 1 - Nov 7, 2024: A Week of Changing Skies", "Today's comprehensive weather forecast promises a dynamic and engaging experience for all, blending a mix of atmospheric conditions that cater to a wide array of preferences and activities. As dawn breaks, residents can anticipate a refreshing and crisp morning with temperatures gently rising from a cool 55°F, creating an invigorating start to the day. The early hours will see a soft, dew-kissed breeze whispering through the streets, carrying the fresh scent of blooming flowers and newly cut grass, setting a serene tone for the day ahead.\n\nBy mid-morning, the sun, in its splendid glory, will begin to assert its presence, gradually elevating temperatures to a comfortable 75°F. The skies, adorned with a few scattered clouds, will paint a picturesque backdrop, ideal for outdoor enthusiasts eager to embrace the day's warmth. Whether it's a leisurely stroll in the park, an adventurous hike through nearby trails, or simply enjoying a quiet moment in the sun, the conditions will be perfectly aligned for an array of outdoor pursuits.\n\nAs the day progresses towards noon, expect the gentle morning breeze to evolve into a more pronounced wind, adding a refreshing counterbalance to the midday sun's warmth. This perfect harmony between the breeze and sunlight offers an optimal environment for sailing and kite-flying, providing just the right amount of lift and drift for an exhilarating experience.\n\nThe afternoon promises a continuation of the day's pleasant conditions, with the sun reigning supreme and the temperature peaking at a delightful 80°F. It's an ideal time for community sports, gardening, or perhaps an outdoor picnic, allowing friends and family to gather and make the most of the splendid weather.\n\nHowever, as we transition into the evening, anticipate a slight shift in the atmosphere. The temperature will gently dip, creating a cool and comfortable setting, perfect for al fresco dining or a serene walk under the starlit sky. The night will conclude with a mild 60°F, ensuring a peaceful and restful end to a day filled with diverse weather experiences.\n\nIn summary, today's weather forecast offers something for everyone, from the early risers seeking tranquility in the morning's embrace to the night owls looking to unwind under the cool evening air. It's a day to revel in the outdoors, pursue a myriad of activities, and simply enjoy the natural beauty that surrounds us.",
+		}
+
 	msgs := []std.Msg{}
-	gaswanted := int64(10000000)
+	gaswanted := int64(gas)
 	gasfee := std.Coin{
 		Denom:  "ugnot",
-		Amount: 1,
+		Amount: fee,
 	}
 
 	msg := vm.MsgCall{
@@ -229,7 +228,7 @@ func signTx(signer keys.Info, account std.BaseAccount, txs []std.Tx, kb *EagerKe
 }
 
 // update sequence number of first n-th accounts
-func prepareSignTasks(kb EagerKeybase,txbase Txbase, n int) ([]Task, error) {
+func prepareSignTasks(kb EagerKeybase, txbase Txbase, n int) ([]Task, error) {
 	infos, err := kb.List()
 	if err != nil {
 		return nil, err
@@ -245,8 +244,8 @@ func prepareSignTasks(kb EagerKeybase,txbase Txbase, n int) ([]Task, error) {
 	for i := 0; i < n; i++ {
 		// update account's information
 		key := SignerKeyPrefix + strconv.Itoa(i)
-		info,err := kb.GetByName(key)
-		if err != nil{
+		info, err := kb.GetByName(key)
+		if err != nil {
 			continue
 		}
 		qopts := &queryOption{
@@ -267,7 +266,7 @@ func prepareSignTasks(kb EagerKeybase,txbase Txbase, n int) ([]Task, error) {
 		// create  Tasks.
 		txs := newTxs()
 		t := SignTxTask{
-			SignerKey:      key,
+			SignerKey:       key,
 			Account:         qret.BaseAccount,
 			encryptPassword: encryptPassword,
 			txs:             txs,
@@ -277,9 +276,6 @@ func prepareSignTasks(kb EagerKeybase,txbase Txbase, n int) ([]Task, error) {
 		tasks = append(tasks, t)
 
 	}
-
-
-
 
 	return tasks, nil
 }

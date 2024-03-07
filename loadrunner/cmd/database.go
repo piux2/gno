@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+
 	"github.com/gnolang/gno/tm2/pkg/crypto"
 	"github.com/gnolang/gno/tm2/pkg/crypto/keys"
 
@@ -74,7 +75,6 @@ type Txbase struct {
 }
 
 func NewTxbase(rootDir, name string) (Txbase, error) {
-
 	dir := filepath.Join(rootDir, "data")
 
 	if err := os.EnsureDir(dir, 0o700); err != nil {
@@ -90,17 +90,16 @@ func NewTxbase(rootDir, name string) (Txbase, error) {
 
 // the key is signer account address
 func (tb Txbase) SetTxs(addr crypto.Address, txs []std.Tx) error {
-
-	mtxs,err := amino.MarshalJSON(txs)
-	  if err != nil{
-
-			panic("")
-		}
+	mtxs, err := amino.MarshalJSON(txs)
+	if err != nil {
+		panic("")
+	}
 	tb.db.SetSync([]byte(addr.String()), mtxs)
 
 	return nil
 }
-func (tb Txbase) GetTxsByAddrS(addr string )([]std.Tx, error){
+
+func (tb Txbase) GetTxsByAddrS(addr string) ([]std.Tx, error) {
 	bzTx := tb.db.Get([]byte(addr))
 	if len(bzTx) == 0 {
 		return nil, fmt.Errorf("key with address %s not found", addr)
@@ -112,22 +111,19 @@ func (tb Txbase) GetTxsByAddrS(addr string )([]std.Tx, error){
 		return nil, err
 	}
 	return txs, nil
-
 }
+
 func (tb Txbase) GetTxs(addr crypto.Address) ([]std.Tx, error) {
-    return  tb.GetTxsByAddrS(addr.String())
+	return tb.GetTxsByAddrS(addr.String())
 }
-func (tb Txbase) Delete(addr crypto.Address){
 
+func (tb Txbase) Delete(addr crypto.Address) {
 	tb.db.DeleteSync([]byte(addr.String()))
-
 }
 
-type TxInfo struct{
-
+type TxInfo struct {
 	addr string
-	txs []std.Tx
-
+	txs  []std.Tx
 }
 
 func (tb Txbase) List() []TxInfo {
@@ -137,15 +133,15 @@ func (tb Txbase) List() []TxInfo {
 	for ; iter.Valid(); iter.Next() {
 		key := string(iter.Key())
 
-			txs, err := tb.GetTxsByAddrS(key)
-			if err != nil {
-				continue
-			}
-			info := TxInfo{
-				addr: key,
-				txs: txs,
-			}
-			res = append(res, info)
+		txs, err := tb.GetTxsByAddrS(key)
+		if err != nil {
+			continue
+		}
+		info := TxInfo{
+			addr: key,
+			txs:  txs,
+		}
+		res = append(res, info)
 
 	}
 	return res

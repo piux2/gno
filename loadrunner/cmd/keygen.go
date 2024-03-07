@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	SignerKeyPrefix   = "loadrunner"
+	SignerKeyPrefix = "loadrunner"
 	encryptPassword = "loadrunner"
 )
 
@@ -62,10 +62,8 @@ func (k KeyGenTask) Execute() error {
 }
 
 func keyGen(args []string) error {
-	if len(args) == 0{
-
+	if len(args) == 0 {
 		return fmt.Errorf("%s\n", "please specify number of keys to generate.")
-
 	}
 	arg := args[0]
 	var numWorkers int = 1000
@@ -104,7 +102,7 @@ func keyGen(args []string) error {
 		key := SignerKeyPrefix + strconv.Itoa(i)
 
 		t := KeyGenTask{
-			signerkey:            key,
+			signerkey:       key,
 			mnemonic:        mnemonic,
 			bip39Passphrase: bip39Passphrase,
 			encryptPassword: encryptPassword,

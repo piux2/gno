@@ -139,7 +139,7 @@ func broadcast(args []string) error {
 	close(results)
 
 	println()
-	fmt.Printf("broadcast %d txs in %s/data/txs.db\n", n*numMsgs, RootDir)
+	fmt.Printf("broadcast %d msgs %d txs in %s/data/txs.db\n", n*numMsgs, n, RootDir)
 	return nil
 }
 
@@ -160,10 +160,14 @@ func broadcastTx(info keys.Info , txbase *Txbase)(*ctypes.ResultBroadcastTxCommi
 		if err != nil {
 			return nil, fmt.Errorf("remarshaling tx binary bytes %w\n",err)
 		}
+
 		bres, err = cli.BroadcastTxCommit(bz)
 		if err != nil {
 			return nil, fmt.Errorf("broadcasting bytes %w\n", err)
 		}
+
+
+
 		fmt.Printf("%s GasWanted: %d \tGasUsed: %d\n",addr, bres.DeliverTx.GasWanted,bres.DeliverTx.GasUsed)
     // after it broadcast successfully, we delete txs entires
 		(*txbase).Delete(info.GetAddress())
