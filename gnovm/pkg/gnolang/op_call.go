@@ -182,7 +182,10 @@ func (m *Machine) doOpCallNativeBody() {
 
 func (m *Machine) doOpCallDeferNativeBody() {
 	fv := m.PopValue().V.(*FuncValue)
-  log.Printf("benchmark.OpCallDeferNativeBody, %v\n", fv)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpCallDeferNativeBody, %v\n", fv)
+	}
+
 	fv.nativeBody(m)
 }
 
