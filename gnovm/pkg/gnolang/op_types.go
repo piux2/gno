@@ -118,7 +118,6 @@ func (m *Machine) doOpMapType() {
 		log.Printf("benchmark.OpMapType, %v\n", vtv)
 	}
 
-
 	tv := m.PeekValue(1) // re-use as result.
 	mt := &MapType{
 		Key:   tv.GetType(),

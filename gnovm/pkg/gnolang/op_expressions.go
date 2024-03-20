@@ -94,7 +94,6 @@ func (m *Machine) doOpSelector() {
 		log.Printf("benchmark.OpSelector, %v\n", sx)
 	}
 
-
 	xv := m.PeekValue(1)
 
 	res := xv.GetPointerTo(m.Alloc, m.Store, sx.Path)
@@ -243,7 +242,6 @@ func (m *Machine) doOpTypeAssert1() {
 			log.Printf("benchmark.OpTypeAssert1, interface %v\n", xv)
 		}
 
-
 		if it, ok := baseOf(t).(*InterfaceType); ok {
 			// t is Gno interface.
 			// assert that x implements type.
@@ -319,7 +317,7 @@ func (m *Machine) doOpTypeAssert2() {
 	if t.Kind() == InterfaceKind { // is interface assert
 
 		if bm.OpCodeDetails && bm.Start {
-					log.Printf("benchmark.OpTypeAssert2, interface %v\n", xv)
+			log.Printf("benchmark.OpTypeAssert2, interface %v\n", xv)
 		}
 
 		if it, ok := baseOf(t).(*InterfaceType); ok {
@@ -357,7 +355,7 @@ func (m *Machine) doOpTypeAssert2() {
 		}
 	} else { // is concrete assert
 		if bm.OpCodeDetails && bm.Start {
-					log.Printf("benchmark.OpTypeAssert2, concrete type %v\n", xv)
+			log.Printf("benchmark.OpTypeAssert2, concrete type %v\n", xv)
 		}
 		tid := t.TypeID()
 		xtid := xt.TypeID()
@@ -380,7 +378,7 @@ func (m *Machine) doOpCompositeLit() {
 	// composite lit expr
 	x := m.PeekExpr(1).(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpCompositeLit, %v\n", x)
+		log.Printf("benchmark.OpCompositeLit, %v\n", x)
 	}
 
 	// composite type
@@ -473,7 +471,7 @@ func (m *Machine) doOpArrayLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpArrayLit, %v\n", x)
+		log.Printf("benchmark.OpArrayLit, %v\n", x)
 	}
 	ne := len(x.Elts)
 	// peek array type.
@@ -535,7 +533,7 @@ func (m *Machine) doOpSliceLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpSliceLit, %v\n", x)
+		log.Printf("benchmark.OpSliceLit, %v\n", x)
 	}
 	el := len(x.Elts)
 	// peek slice type.
@@ -564,7 +562,7 @@ func (m *Machine) doOpSliceLit2() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpSliceLit2, %v\n", x)
+		log.Printf("benchmark.OpSliceLit2, %v\n", x)
 	}
 	el := len(x.Elts)
 	tvs := m.PopValues(el * 2)
@@ -616,7 +614,7 @@ func (m *Machine) doOpSliceLit2() {
 func (m *Machine) doOpMapLit() {
 	x := m.PopExpr().(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpMapLit, %v\n", x)
+		log.Printf("benchmark.OpMapLit, %v\n", x)
 	}
 	ne := len(x.Elts)
 	// peek map type.
@@ -658,7 +656,7 @@ func (m *Machine) doOpStructLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
 	if bm.OpCodeDetails && bm.Start {
-				log.Printf("benchmark.OpStructLit, %v\n", x)
+		log.Printf("benchmark.OpStructLit, %v\n", x)
 	}
 	el := len(x.Elts) // may be incomplete
 	// peek struct type.

@@ -68,7 +68,7 @@ func (m *Machine) doOpExec(op Op) {
 		}
 	}
 	if bm.OpCodeDetails && bm.Start {
-		log.Printf("benchmark.OpExec, %v\n", s)
+		log.Printf("benchmark.OpExec, %v, %v\n", s, op)
 	}
 
 	// NOTE this could go in the switch statement, and we could
@@ -92,8 +92,14 @@ func (m *Machine) doOpExec(op Op) {
 			// continue onto exec stmt.
 			bs.Active = next
 			s = next
+			if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpBody, %v\n", s)
+			}
 			goto EXEC_SWITCH
 		} else {
+			if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpBody, %v\n", s)
+			}
 			m.ForcePopOp()
 			m.ForcePopStmt()
 			return
@@ -126,6 +132,9 @@ func (m *Machine) doOpExec(op Op) {
 			// continue onto exec stmt.
 			bs.Active = next
 			s = next
+			if bm.OpCodeDetails && bm.Start {
+				log.Printf("benchmark.OpForLoop, %v\n", s)
+			}
 			goto EXEC_SWITCH
 		} else if bs.NextBodyIndex == bs.BodyLen {
 			// (queue to) go back.
@@ -145,6 +154,9 @@ func (m *Machine) doOpExec(op Op) {
 				// or uh...
 				bs.Active = next
 				s = next
+				if bm.OpCodeDetails && bm.Start {
+					log.Printf("benchmark.OpForLoop, Post %v\n", s)
+				}
 				goto EXEC_SWITCH
 			}
 		} else {
@@ -218,6 +230,13 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
+				if bm.OpCodeDetails && bm.Start {
+					if op == OpRangeIter {
+						log.Printf("benchmark.OpRangeIter, %v\n", s)
+					} else {
+						log.Printf("benchmark. OpRangeIterArrayPtr, %v\n", s)
+					}
+				}
 				goto EXEC_SWITCH
 			} else if bs.NextBodyIndex == bs.BodyLen {
 				if bs.ListIndex < bs.ListLen-1 {
@@ -240,6 +259,13 @@ func (m *Machine) doOpExec(op Op) {
 					bs.ListIndex++
 					bs.NextBodyIndex = -1
 					bs.Active = nil
+					if bm.OpCodeDetails && bm.Start {
+						if op == OpRangeIter {
+							log.Printf("benchmark.OpRangeIter, %v\n", s)
+						} else {
+							log.Printf("benchmark. OpRangeIterArrayPtr, %v\n", s)
+						}
+					}
 					return // redo doOpExec:*bodyStmt
 				} else {
 					// done with range.
@@ -312,6 +338,9 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
+				if bm.OpCodeDetails && bm.Start {
+					log.Printf("benchmark.OpRangeIterString, %v\n", s)
+				}
 				goto EXEC_SWITCH
 			} else if bs.NextBodyIndex == bs.BodyLen {
 				if bs.StrIndex < bs.StrLen {
@@ -338,6 +367,9 @@ func (m *Machine) doOpExec(op Op) {
 					bs.StrIndex += size
 					bs.NextBodyIndex = -1
 					bs.Active = nil
+					if bm.OpCodeDetails && bm.Start {
+						log.Printf("benchmark.OpRangeIterString, %v\n", s)
+					}
 					return // redo doOpExec:*bodyStmt
 				} else {
 					// done with range.
@@ -405,6 +437,9 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
+				if bm.OpCodeDetails && bm.Start {
+					log.Printf("benchmark.OpRangeIterMap, %v\n", s)
+				}
 				goto EXEC_SWITCH
 			} else if bs.NextBodyIndex == bs.BodyLen {
 				nnext := bs.NextItem.Next
@@ -433,6 +468,9 @@ func (m *Machine) doOpExec(op Op) {
 					bs.ListIndex++
 					bs.NextBodyIndex = -1
 					bs.Active = nil
+					if bm.OpCodeDetails && bm.Start {
+						log.Printf("benchmark.OpRangeIterMap, %v\n", s)
+					}
 					return // redo doOpExec:*bodyStmt
 				}
 			} else {

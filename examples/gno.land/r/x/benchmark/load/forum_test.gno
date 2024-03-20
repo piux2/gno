@@ -1,10 +1,10 @@
 package load
 
-import(
+import (
 	"testing"
 )
 
-func TestPost(t *testing.T){
+func TestPost(t *testing.T) {
 	title := "Weather Outlook: Nov 1 - Nov 7, 2024: A Week of Changing Skies- 1KB"
 	content := `
 	Today's comprehensive weather forecast promises a dynamic and engaging experience for all, blending a mix of atmospheric conditions that cater to a wide array of preferences and activities. As dawn breaks, residents can anticipate a refreshing and crisp morning with temperatures gently rising from a cool 55°F, creating an invigorating start to the day. The early hours will see a soft, dew-kissed breeze whispering through the streets, carrying the fresh scent of blooming flowers and newly cut grass, setting a serene tone for the day ahead.
@@ -20,5 +20,4 @@ func TestPost(t *testing.T){
 	In summary, today's weather forecast offers something for everyone, from the early risers seeking tranquility in the morning's embrace to the night owls looking to unwind under the cool evening air. It's a day to revel in the outdoors, pursue a myriad of activities, and simply enjoy the natural beauty that surrounds us.
 	`
 	AddPost(title, content)
-
 }

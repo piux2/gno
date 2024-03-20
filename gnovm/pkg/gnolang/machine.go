@@ -64,11 +64,15 @@ type Machine struct {
 // If pkgPath is zero, the machine has no active package
 // and one must be set prior to usage.
 func NewMachine(pkgPath string, store Store) *Machine {
-	return NewMachineWithOptions(
+	m := NewMachineWithOptions(
 		MachineOptions{
 			PkgPath: pkgPath,
 			Store:   store,
 		})
+	// this is the entry for static analysis and evaluation from Preprocess
+	// TODO: add if preprocess block and flag here.
+	// m.Benchmark = true
+	return m
 }
 
 type MachineOptions struct {
@@ -226,6 +230,20 @@ func (m *Machine) PreprocessAllFilesAndSaveBlockNodes() {
 // and corresponding package node, package value, and types to store. Save
 // is set to false for tests where package values may be native.
 func (m *Machine) RunMemPackage(memPkg *std.MemPackage, save bool) (*PackageNode, *PackageValue) {
+	defer func() {
+		bm.StopMeasurement(0)
+		// XXX: current msg are executed in sequence
+		bm.Start = false    // reset the measurement
+		m.Benchmark = false // reset benchmark flag on the machine.
+	}()
+
+	measure := bm.Enabled() &&
+		bm.Entry == bm.KEEPER_ADDPKG
+
+	if measure {
+		m.Benchmark = true // turn on benchmark
+		bm.Start = true
+	}
 	// parse files.
 	files := ParseMemPackage(memPkg)
 	// make and set package if doesn't exist.
@@ -1088,13 +1106,14 @@ func (m *Machine) Run() {
 	var measure bool
 	for {
 		measure = bm.Enabled() &&
-			bm.Entry == bm.KEEPER_CALL &&
-			m.Benchmark == true // AFTER the first OpExec executed, we turn on the measurement
+			(bm.Entry == bm.KEEPER_CALL || bm.Entry == bm.KEEPER_ADDPKG) &&
+			m.Benchmark == true // For Keeper_call, AFTER the first OpExec executed in doOpExec, we turn on the benchmark
 		if measure {
-			// we set TraceInit at package level instead of machine level because
+			// we set Benchmark Start flag at benchmark package level instead of machine instance level (machine.benchmark.start)because
 			// the instrument code does not have have reference to machine instance in gnostore
-			// TODO: it may make more sense to add trace init flag and pass it in gnostore  so
-			// that we can manage the benchmark flag at machine level
+			// TODO: it may make more sense to add benchmark start flag and pass it in gnostore  so
+			// that we can manage the benchmark flag with in a machine instance.
+
 			bm.Start = true
 		}
 		op := m.PopOp()

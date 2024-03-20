@@ -31,7 +31,6 @@ func TracesEnabled() bool {
 
 // Init can indicate both, either, or none of metrics and tracing depending on the options provided.
 func Init(ctx context.Context, options ...Option) error {
-
 	config.Port = defaultPort
 	config.MeterName = defaultMeterName
 	config.ServiceName = defaultServiceName

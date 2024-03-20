@@ -20,10 +20,9 @@ const (
 	NamespaceVMProcess  namespace = "vmProcess"
 	NamespaceVMQuery    namespace = "vmQuery"
 	NamespaceMachineRun namespace = "machineRun"
-	NamespaceCheckTx  namespace = "checkTx"
-	NamespaceDeliverTx namespace = "deliverTx"
-	NamespaceQuery namespace = "query"
-
+	NamespaceCheckTx    namespace = "checkTx"
+	NamespaceDeliverTx  namespace = "deliverTx"
+	NamespaceQuery      namespace = "query"
 )
 
 // Maps goroutine number to namespace and context.

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/gnolang/gno/telemetry"
+	"github.com/gnolang/gno/telemetry/traces"
 	"github.com/gnolang/gno/tm2/pkg/amino"
 	abci "github.com/gnolang/gno/tm2/pkg/bft/abci/types"
 	bft "github.com/gnolang/gno/tm2/pkg/bft/types"
@@ -16,8 +18,6 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/log"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/gnolang/gno/tm2/pkg/store"
-	"github.com/gnolang/gno/telemetry"
-	"github.com/gnolang/gno/telemetry/traces"
 )
 
 // Key to store the consensus params in the main store.
@@ -375,7 +375,6 @@ func splitPath(requestPath string) (path []string) {
 // Query implements the ABCI interface. It delegates to CommitMultiStore if it
 // implements Queryable.
 func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
-
 	if telemetry.TracesEnabled() {
 		traces.InitNamespace(nil, traces.NamespaceQuery)
 		spanEnder := traces.StartSpan(
@@ -383,7 +382,6 @@ func (app *BaseApp) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 		)
 		defer spanEnder.End()
 	}
-
 
 	path := splitPath(req.Path)
 	if len(path) == 0 {

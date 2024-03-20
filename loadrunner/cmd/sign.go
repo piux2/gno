@@ -39,7 +39,7 @@ func newSignCmd() *commands.Command {
 		},
 		cfg,
 		func(_ context.Context, args []string) error {
-			return sign(args[0])
+			return sign(args)
 		},
 	)
 }
@@ -72,7 +72,11 @@ func (s SignTxTask) Execute() error {
 	return nil
 }
 
-func sign(num string) error {
+func sign(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("%s\n", "please specify number of transactions to sign. Each tx contains %d messages", numMsgs)
+	}
+	num := args[0]
 	var numWorkers int = 1000
 
 	kb, err := NewEagerKeybase(RootDir)
@@ -89,7 +93,7 @@ func sign(num string) error {
 	defer txbase.Close()
 
 	// we will assign each key account a task to sign the transactions.
-	// n is number of key accounts.
+	// n is number of key accounts, and each key sign one tx.
 	n, err := strconv.Atoi(num)
 	if err != nil {
 		return nil
@@ -137,7 +141,8 @@ func sign(num string) error {
 
 func newTxs() []std.Tx {
 	// TODO: max gas, max tx size and max msg size
-	pkgPath := "gno.land/r/load"
+	 pkgPath := "gno.land/r/x/benchmark/load"
+	// pkgPath := "gno.land/r/load"
 	fn := "AddPost"
 	//args := []string{"hello", "world"}
 

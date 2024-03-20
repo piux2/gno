@@ -263,7 +263,8 @@ func (vm *VMKeeper) AddPackage(ctx sdk.Context, msg MsgAddPackage) (err error) {
 		}
 		m2.Release()
 	}()
-
+	// set the menchmarking entry point
+	// bm.Entry = bm.KEEPER_ADDPKG
 	m2.RunMemPackage(memPkg, true)
 	return nil
 }

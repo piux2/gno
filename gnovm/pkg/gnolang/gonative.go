@@ -2,7 +2,10 @@ package gnolang
 
 import (
 	"fmt"
+	"log"
 	"reflect"
+
+	bm "github.com/gnolang/gno/benchmarking"
 )
 
 // NOTE
@@ -1287,6 +1290,9 @@ func (x *PackageNode) DefineGoNativeValue(n Name, nv interface{}) {
 func (m *Machine) doOpArrayLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpArrayLitGoNative, %v\n", x)
+	}
 	el := len(x.Elts) // may be incomplete
 	// peek array type.
 	xt := m.PeekValue(1 + el).V.(TypeValue).Type
@@ -1325,6 +1331,9 @@ func (m *Machine) doOpArrayLitGoNative() {
 func (m *Machine) doOpSliceLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpSliceLitGoNative, %v\n", x)
+	}
 	el := len(x.Elts) // may be incomplete
 	// peek slice type.
 	xt := m.PeekValue(1 + el).V.(TypeValue).Type
@@ -1364,6 +1373,11 @@ func (m *Machine) doOpSliceLitGoNative() {
 func (m *Machine) doOpStructLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpStructLitGoNative, %v\n", x)
+	}
+
 	el := len(x.Elts) // may be incomplete
 	// peek struct type.
 	xt := m.PeekValue(1 + el).V.(TypeValue).Type
@@ -1407,6 +1421,11 @@ func (m *Machine) doOpStructLitGoNative() {
 func (m *Machine) doOpCallGoNative() {
 	fr := m.LastFrame()
 	fv := fr.GoFunc
+
+	if bm.OpCodeDetails && bm.Start {
+		log.Printf("benchmark.OpCallGoNative, %v\n", fv)
+	}
+
 	ft := fv.Value.Type()
 	hasVarg := ft.IsVariadic()
 	numParams := ft.NumIn()

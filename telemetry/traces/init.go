@@ -27,7 +27,6 @@ const (
 var globalTraceFilter traceFilter
 
 func Init(config options.Config) error {
-
 	if config.ExporterEndpoint == "" {
 		return exporter.ErrEndpointNotSet
 	}
