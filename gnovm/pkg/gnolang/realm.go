@@ -129,7 +129,7 @@ func (rlm *Realm) String() string {
 // xo or co is nil if the element value is undefined or has no
 // associated object.
 func (rlm *Realm) DidUpdate(po, xo, co Object) {
-	if bm.Start {
+	if bm.StartCPU && !bm.StartStore {
 		bm.Pause()
 		defer bm.Resume()
 	}
@@ -284,7 +284,7 @@ func (rlm *Realm) MarkNewEscaped(oo Object) {
 
 // OpReturn calls this when exiting a realm transaction.
 func (rlm *Realm) FinalizeRealmTransaction(readonly bool, store Store) {
-	if bm.Start {
+	if bm.StartCPU &&!bm.StartStore {
 		bm.Pause()
 		defer bm.Resume()
 	}

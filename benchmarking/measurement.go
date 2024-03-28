@@ -6,14 +6,14 @@ import (
 
 type measurement struct {
 	*timer
-	opCode     OpCode
+	code     Code
 	allocation uint32
 }
 
-func startNewMeasurement(opCode OpCode) *measurement {
+func startNewMeasurement(code Code) *measurement {
 	return &measurement{
 		timer:  &timer{startTime: time.Now()},
-		opCode: opCode,
+		code: code,
 	}
 }
 
@@ -33,5 +33,5 @@ func (m *measurement) end(size uint32) {
 		size = m.allocation
 	}
 
-	fileWriter.export(m.opCode, m.elapsedTime, size)
+	fileWriter.export(m.code, m.elapsedTime, size)
 }

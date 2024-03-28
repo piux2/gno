@@ -253,6 +253,7 @@ func (vm *VMKeeper) AddPackage(ctx sdk.Context, msg MsgAddPackage) (err error) {
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case store.OutOfGasException: // panic in consumeGas()
+			  m2.Release()
 				panic(r)
 			default:
 				err = errors.Wrap(fmt.Errorf("%v", r), "VM addpkg panic: %v\n%s\n",
@@ -371,18 +372,28 @@ func (vm *VMKeeper) Call(ctx sdk.Context, msg MsgCall) (res string, err error) {
 		if r := recover(); r != nil {
 			switch r.(type) {
 			case store.OutOfGasException: // panic in consumeGas()
+			//  m.Release()
 				panic(r)
 			default:
 				err = errors.Wrap(fmt.Errorf("%v", r), "VM call panic: %v\n%s\n",
 					r, m.String())
-				m.Release()
+			//	m.Release()
 				return
 			}
 		}
-		m.Release()
+	//	m.Release()
 	}()
 	// set the menchmarking entry point
-	bm.Entry = bm.KEEPER_CALL
+	if bm.Enabled(){
+
+		bm.Entry = bm.KEEPER_CALL
+		defer func(){
+			bm.Entry = ""
+			bm.StartStore = false
+			bm.StartCPU = false
+		}()
+	}
+
 	rtvs := m.Eval(xn)
 	for i, rtv := range rtvs {
 		res = res + rtv.String()

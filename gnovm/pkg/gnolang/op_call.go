@@ -11,7 +11,7 @@ import (
 
 func (m *Machine) doOpPrecall() {
 	cx := m.PopExpr().(*CallExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpPreCall, %v\n", cx)
 	}
 	v := m.PeekValue(1 + cx.NumArgs).V
@@ -57,7 +57,7 @@ func (m *Machine) doOpCall() {
 	fr := m.LastFrame()
 	fv := fr.Func
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpCall, %v\n", fv)
 	}
 
@@ -174,7 +174,7 @@ func (m *Machine) doOpCall() {
 }
 
 func (m *Machine) doOpCallNativeBody() {
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpCallNativeBody, %v\n", m.LastFrame().Func)
 	}
 	m.LastFrame().Func.nativeBody(m)
@@ -182,7 +182,7 @@ func (m *Machine) doOpCallNativeBody() {
 
 func (m *Machine) doOpCallDeferNativeBody() {
 	fv := m.PopValue().V.(*FuncValue)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpCallDeferNativeBody, %v\n", fv)
 	}
 
@@ -193,7 +193,7 @@ func (m *Machine) doOpCallDeferNativeBody() {
 func (m *Machine) doOpReturn() {
 	cfr := m.PopUntilLastCallFrame()
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpReturn, %v\n", cfr)
 	}
 
@@ -229,7 +229,7 @@ func (m *Machine) doOpReturn() {
 func (m *Machine) doOpReturnFromBlock() {
 	// Copy results from block.
 	cfr := m.PopUntilLastCallFrame()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpReturnFromBlock, %v\n", cfr)
 	}
 	ft := cfr.Func.GetType(m.Store)
@@ -267,7 +267,7 @@ func (m *Machine) doOpReturnFromBlock() {
 // expressions.
 func (m *Machine) doOpReturnToBlock() {
 	cfr := m.LastCallFrame(1)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpReturnToBlock, %v\n", cfr)
 	}
 	ft := cfr.Func.GetType(m.Store)
@@ -284,7 +284,7 @@ func (m *Machine) doOpReturnToBlock() {
 func (m *Machine) doOpReturnCallDefers() {
 	cfr := m.LastCallFrame(1)
 	dfr, ok := cfr.PopDefer()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Println("benchmark.OpReturnCallDefers")
 	}
 	if !ok {
@@ -374,7 +374,7 @@ func (m *Machine) doOpDefer() {
 	lb := m.LastBlock()
 	cfr := m.LastCallFrame(1)
 	ds := m.PopStmt().(*DeferStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpDefer, %v\n", ds)
 	}
 
@@ -428,7 +428,7 @@ func (m *Machine) doOpDefer() {
 }
 
 func (m *Machine) doOpPanic1() {
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Println("benchmark.OpPanic1")
 	}
 	// Pop exception
@@ -438,7 +438,7 @@ func (m *Machine) doOpPanic1() {
 }
 
 func (m *Machine) doOpPanic2() {
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Println("benchmark.OpPanic2")
 	}
 	if len(m.Exceptions) == 0 {

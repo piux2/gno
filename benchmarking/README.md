@@ -1,6 +1,8 @@
 
 # benchmarking flow
 
+## OpCode
+
 - To enable benchmarking
 
 ```sh
@@ -26,6 +28,8 @@ we need to run following command. It converts the binary format result in benchm
 
 ```
 
-
 TODO:
 - benchmark binary operations on different data type with large numbers.
+
+
+## Store Access 

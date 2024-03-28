@@ -42,7 +42,7 @@ func main() {
 
 				opName := gnolang.Op(record[0]).String()
 				if record[1] != 0 {
-					opName = benchmarking.OpCodeString(record[1])
+					opName = benchmarking.StoreCodeString(record[1])
 				}
 
 				elapsedTime := binary.LittleEndian.Uint32(record[2:])

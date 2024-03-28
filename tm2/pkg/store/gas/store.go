@@ -6,6 +6,8 @@ import (
 	"github.com/gnolang/gno/tm2/pkg/store/types"
 	"github.com/gnolang/overflow"
 	"go.opentelemetry.io/otel/attribute"
+//  "log"
+//	bm "github.com/gnolang/gno/benchmarking"
 )
 
 var _ types.Store = &Store{}
@@ -31,24 +33,20 @@ func New(parent types.Store, gasMeter types.GasMeter, gasConfig types.GasConfig)
 // Implements Store.
 func (gs *Store) Get(key []byte) (value []byte) {
 	var gas int64
-	// telemetry  start
-	var span *traces.Span
-	if telemetry.TracesEnabled() && traces.IsTraceStore() {
-		span = traces.StartSpan(
-			"Store.Get",
-		)
-		defer func() {
-			span.SetAttributes(
-				attribute.Int64(types.GasReadCostFlatDesc, gs.gasConfig.ReadCostFlat),
-				attribute.Int64(types.GasReadPerByteDesc, gas),
-			)
-			span.End()
+	/*
+	// benchmark start
+  var size uint32
+	if bm.StartStore {// benchmarking start
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGet))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGet, %d\n", size)
 		}()
 	}
-	// telemetry end
-
+	*/
 	gs.gasMeter.ConsumeGas(gs.gasConfig.ReadCostFlat, types.GasReadCostFlatDesc)
 	value = gs.parent.Get(key)
+//	size = uint32(len(value))
 
 	gas = overflow.Mul64p(gs.gasConfig.ReadCostPerByte, types.Gas(len(value)))
 	gs.gasMeter.ConsumeGas(gas, types.GasReadPerByteDesc)
@@ -59,21 +57,19 @@ func (gs *Store) Get(key []byte) (value []byte) {
 // Implements Store.
 func (gs *Store) Set(key []byte, value []byte) {
 	var gas int64
-	// telemetry code start
-	var span *traces.Span
-	if telemetry.TracesEnabled() && traces.IsTraceStore() {
-		span = traces.StartSpan(
-			"Store.Set",
-		)
-		defer func() {
-			span.SetAttributes(
-				attribute.Int64(types.GasWriteCostFlatDesc, gs.gasConfig.WriteCostFlat),
-				attribute.Int64(types.GasWritePerByteDesc, gas),
-			)
-			span.End()
+	// benchmark start
+	/*
+	var size uint32
+	if bm.StartStore {// benchmarking start
+		bm.StartMeasurement(bm.StoreCode(bm.StoreSet))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreSet, %d\n", size)
 		}()
 	}
-	// telemetry code end
+	size = uint32(len(value))
+	*/
+	// benchmark code end
 
 	types.AssertValidValue(value)
 	gs.gasMeter.ConsumeGas(gs.gasConfig.WriteCostFlat, types.GasWriteCostFlatDesc)

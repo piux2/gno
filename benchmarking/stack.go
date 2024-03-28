@@ -11,7 +11,7 @@ func initStack() {
 	measurementStack = make([]*measurement, initStackSize)
 }
 
-func StartMeasurement(opCode OpCode) {
+func StartMeasurement(code Code) {
 	if stackSize != 0 {
 		measurementStack[stackSize-1].pause()
 	}
@@ -22,7 +22,7 @@ func StartMeasurement(opCode OpCode) {
 		measurementStack = newStack
 	}
 
-	measurementStack[stackSize] = startNewMeasurement(opCode)
+	measurementStack[stackSize] = startNewMeasurement(code)
 	stackSize++
 }
 

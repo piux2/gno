@@ -14,7 +14,7 @@ func (m *Machine) doOpUpos() {
 	if debug {
 		debug.Printf("doOpUpos(%v)\n", ux)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpUpos, %v\n", ux)
 	}
 
@@ -27,7 +27,7 @@ func (m *Machine) doOpUneg() {
 		debug.Printf("doOpUneg(%v)\n", ux)
 	}
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpUneg, %v\n", ux)
 	}
 
@@ -82,7 +82,7 @@ func (m *Machine) doOpUnot() {
 		debug.Printf("doOpUnot(%v)\n", ux)
 	}
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpUnot, %v\n", ux)
 	}
 
@@ -103,7 +103,7 @@ func (m *Machine) doOpUxor() {
 	if debug {
 		debug.Printf("doOpUxor(%v)\n", ux)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpUxor, %v\n", ux)
 	}
 	xv := m.PeekValue(1)
@@ -140,7 +140,7 @@ func (m *Machine) doOpUxor() {
 }
 
 func (m *Machine) doOpUrecv() {
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Println("benchmark.OpUrecv, panic not implemented")
 	}
 	panic("not yet implemented")

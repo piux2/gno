@@ -15,7 +15,7 @@ import (
 func (m *Machine) doOpBinary1() {
 	bx := m.PopExpr().(*BinaryExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBinary1, %v\n", bx)
 	}
 	switch bx.Op {
@@ -50,14 +50,11 @@ func (m *Machine) doOpLor() {
 	// get right and left operands.
 	rv := m.PopValue()
 	lv := m.PeekValue(1) // also the result
-	if bm.OpCodeDetails && bm.Start {
-		log.Printf("benchmark.OpLor, %v, %v\n", lv, rv)
+	if bm.OpCodeDetails && bm.StartCPU {
+		log.Printf("benchmark.OpLor, %v || %v\n", lv, rv)
 	}
 	if debug {
 		assertSameTypes(lv.T, rv.T)
-	}
-	if bm.OpCodeDetails && bm.Start {
-		log.Printf("benchmark.OpLand, %v Lor %v\n", lv, rv)
 	}
 	// set result in lv.
 	if isUntyped(lv.T) {
@@ -70,14 +67,11 @@ func (m *Machine) doOpLand() {
 	// get right and left operands.
 	rv := m.PopValue()
 	lv := m.PeekValue(1) // also the result
-	if bm.OpCodeDetails && bm.Start {
-		log.Printf("benchmark.OpLand, %v, %v\n", lv, rv)
-	}
 
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpLand, %v && %v\n", lv, rv)
 	}
 	// set result in lv.
@@ -99,7 +93,7 @@ func (m *Machine) doOpEql() {
 
 	// set result in lv.
 	res := isEql(m.Store, lv, rv)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpEql, %v == %v is %v\n", lv, rv, res)
 	}
 	lv.T = UntypedBoolType
@@ -119,7 +113,7 @@ func (m *Machine) doOpNeq() {
 
 	// set result in lv.
 	res := !isEql(m.Store, lv, rv)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpNeq, %v != %v is %v\n", lv, rv, res)
 	}
 	lv.T = UntypedBoolType
@@ -140,7 +134,7 @@ func (m *Machine) doOpLss() {
 	// set the result in lv.
 	res := isLss(lv, rv)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpLss, %v < %v is %v\n", lv, rv, res)
 	}
 
@@ -161,7 +155,7 @@ func (m *Machine) doOpLeq() {
 
 	// set the result in lv.
 	res := isLeq(lv, rv)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpLeq, %v <= %v is %v\n", lv, rv, res)
 	}
 
@@ -181,7 +175,7 @@ func (m *Machine) doOpGtr() {
 	}
 	// set the result in lv.
 	res := isGtr(lv, rv)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpGtr, %v > %v is %v\n", lv, rv, res)
 	}
 	lv.T = UntypedBoolType
@@ -202,7 +196,7 @@ func (m *Machine) doOpGeq() {
 	// set the result in lv.
 	res := isGeq(lv, rv)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpGeq, %v >= %v is %v\n", lv, rv, res)
 	}
 
@@ -220,7 +214,7 @@ func (m *Machine) doOpAdd() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpAdd, %v + %v\n", lv, rv)
 	}
 	// add rv to lv.
@@ -236,7 +230,7 @@ func (m *Machine) doOpSub() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSub, %v - %v\n", lv, rv)
 	}
 	// sub rv from lv.
@@ -253,7 +247,7 @@ func (m *Machine) doOpBor() {
 		assertSameTypes(lv.T, rv.T)
 	}
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBor, %v | %v\n", lv, rv)
 	}
 	// lv | rv
@@ -269,7 +263,7 @@ func (m *Machine) doOpXor() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpXor, %v ^ %v\n", lv, rv)
 	}
 	// lv ^ rv
@@ -285,7 +279,7 @@ func (m *Machine) doOpMul() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpMul, %v * %v\n", lv, rv)
 	}
 	// lv * rv
@@ -301,7 +295,7 @@ func (m *Machine) doOpQuo() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpQuo, %v / %v\n", lv, rv)
 	}
 	// lv / rv
@@ -317,7 +311,7 @@ func (m *Machine) doOpRem() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpRem, %v %% %v\n", lv, rv)
 	}
 	// lv % rv
@@ -335,7 +329,7 @@ func (m *Machine) doOpShl() {
 			panic("should not happen")
 		}
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpShl, %v << %v\n", lv, rv)
 	}
 
@@ -354,7 +348,7 @@ func (m *Machine) doOpShr() {
 			panic("should not happen")
 		}
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpShr, %v >> %v\n", lv, rv)
 	}
 	// lv >> rv
@@ -370,7 +364,7 @@ func (m *Machine) doOpBand() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBand, %v & %v\n", lv, rv)
 	}
 	// lv & rv
@@ -386,7 +380,7 @@ func (m *Machine) doOpBandn() {
 	if debug {
 		assertSameTypes(lv.T, rv.T)
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBandn, %v &^ %v\n", lv, rv)
 	}
 	// lv &^ rv

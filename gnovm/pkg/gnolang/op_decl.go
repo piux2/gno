@@ -10,7 +10,7 @@ import (
 func (m *Machine) doOpValueDecl() {
 	s := m.PopStmt().(*ValueDecl)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpValueDecl, %v\n", s)
 	}
 
@@ -74,7 +74,7 @@ func (m *Machine) doOpValueDecl() {
 
 func (m *Machine) doOpTypeDecl() {
 	s := m.PopStmt().(*TypeDecl)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpTypeDecl, %v\n", s)
 	}
 	t := m.PopValue().GetType()

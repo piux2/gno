@@ -1,49 +1,63 @@
 package benchmarking
-
+// store code
 const (
-	OpStoreGetObject     byte = 0x01 // get value from store
-	OpStoreSetObject     byte = 0x02 // set value in store
-	OpStoreDeleteObject  byte = 0x03 // delete value from store
-	OpStoreGetPackage    byte = 0x04 // get package from store
-	OpStoreGetType       byte = 0x05 // get type from store
-	OpStoreSetType       byte = 0x06 // set type in store
-	OpStoreGetBlockNode  byte = 0x07 // get block node from store
-	OpStoreSetBlockNode  byte = 0x08 // set block node in store
-	OpStoreAddMemPackage byte = 0x09 // add mempackage to store
-	OpStoreGetMemPackage byte = 0x0A // get mempackage from store
-	OpFinalizeTx         byte = 0x0B // finalize realm transaction
+	StoreGetObject     byte = 0x01 // get value and unmarshl to object from store
+	StoreSetObject     byte = 0x02 // marshal object and set value in store
+	StoreDeleteObject  byte = 0x03 // delete value from store
+	StoreGetPackage    byte = 0x04 // get package from store
+	StoreSetPackage    byte = 0x05 // get package from store
+	StoreGetType       byte = 0x06 // get type from store
+	StoreSetType       byte = 0x07 // set type in store
+	StoreGetBlockNode  byte = 0x08 // get block node from store
+	StoreSetBlockNode  byte = 0x09 // set block node in store
+	StoreAddMemPackage byte = 0x0A // add mempackage to store
+	StoreGetMemPackage byte = 0x0B // get mempackage from store
+	FinalizeTx         byte = 0x0C // finalize realm transaction
 
-	invalidStorageOp string = "OpStoreInvalid"
+	AminoMarshal      byte = 0x0D // marshal go object to binary value
+	AminoUnMarshal		byte = 0x0E // unmarshl binary value to go object
+
+
+	StoreGet      byte = 0x0F // Get binary value by key
+	StoreSet		  byte = 0x10 // Set binary value by key
+
+
+	invalidStoreCode string = "StoreInvalid"
 )
 
-var opCodeNames = []string{
-	invalidStorageOp,
-	"OpStoreGetObject",
-	"OpStoreSetObject",
-	"OpStoreDeleteObject",
-	"OpStoreGetPackage",
-	"OpStoreGetType",
-	"OpStoreSetType",
-	"OpStoreGetBlockNode",
-	"OpStoreSetBlockNode",
-	"OpStoreAddMemPackage",
-	"OpStoreGetMemPackage",
-	"OpFinalizeTx",
+var storeCodeNames = []string{
+	invalidStoreCode,
+	"StoreGetObject",
+	"StoreSetObject",
+	"StoreDeleteObject",
+	"StoreGetPackage",
+	"StoreSetPackage",
+	"StoreGetType",
+	"StoreSetType",
+	"StoreGetBlockNode",
+	"StoreSetBlockNode",
+	"StoreAddMemPackage",
+	"StoreGetMemPackage",
+	"FinalizeTx",
+	"AminoMarshal",
+	"AminoUnMarshal",
+	"StoreGet",
+	"StoreSet",
 }
 
-type OpCode [2]byte
+type Code [2]byte
 
-func VMOpCode(op byte) OpCode {
-	return [2]byte{op, 0x00}
+func VMOpCode(opCode byte) Code {
+	return [2]byte{opCode, 0x00}
 }
 
-func StorageOpCode(op byte) OpCode {
-	return [2]byte{0x00, op}
+func StoreCode(storeCode byte) Code {
+	return [2]byte{0x00, storeCode}
 }
 
-func OpCodeString(op byte) string {
-	if int(op) >= len(opCodeNames) {
-		return invalidStorageOp
+func StoreCodeString(storeCode byte) string {
+	if int(storeCode) >= len(storeCodeNames) {
+		return invalidStoreCode
 	}
-	return opCodeNames[op]
+	return storeCodeNames[storeCode]
 }

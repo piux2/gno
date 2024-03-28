@@ -11,7 +11,7 @@ import (
 
 func (m *Machine) doOpInc() {
 	s := m.PopStmt().(*IncDecStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpInc, %v\n", s)
 	}
 	// Get reference to lhs.
@@ -84,7 +84,7 @@ func (m *Machine) doOpInc() {
 func (m *Machine) doOpDec() {
 	s := m.PopStmt().(*IncDecStmt)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpDec, %v\n", s)
 	}
 	// Get result ptr depending on lhs.

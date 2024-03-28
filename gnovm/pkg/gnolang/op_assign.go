@@ -8,7 +8,7 @@ import (
 
 func (m *Machine) doOpDefine() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpDefine, %v\n", s)
 	}
 
@@ -36,7 +36,7 @@ func (m *Machine) doOpDefine() {
 
 func (m *Machine) doOpAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpAssgin, %v\n", s)
 	}
 
@@ -61,7 +61,7 @@ func (m *Machine) doOpAssign() {
 
 func (m *Machine) doOpAddAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpAddAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -87,7 +87,7 @@ func (m *Machine) doOpAddAssign() {
 
 func (m *Machine) doOpSubAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSubAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -113,7 +113,7 @@ func (m *Machine) doOpSubAssign() {
 
 func (m *Machine) doOpMulAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpMulAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -139,7 +139,7 @@ func (m *Machine) doOpMulAssign() {
 
 func (m *Machine) doOpQuoAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpQuoAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -165,7 +165,7 @@ func (m *Machine) doOpQuoAssign() {
 
 func (m *Machine) doOpRemAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpRemAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -191,7 +191,7 @@ func (m *Machine) doOpRemAssign() {
 
 func (m *Machine) doOpBandAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpAddAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -217,7 +217,7 @@ func (m *Machine) doOpBandAssign() {
 
 func (m *Machine) doOpBandnAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBandnAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -243,7 +243,7 @@ func (m *Machine) doOpBandnAssign() {
 
 func (m *Machine) doOpBorAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpBorAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -269,7 +269,7 @@ func (m *Machine) doOpBorAssign() {
 
 func (m *Machine) doOpXorAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpXorAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -295,7 +295,7 @@ func (m *Machine) doOpXorAssign() {
 
 func (m *Machine) doOpShlAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpShlAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.
@@ -318,7 +318,7 @@ func (m *Machine) doOpShlAssign() {
 
 func (m *Machine) doOpShrAssign() {
 	s := m.PopStmt().(*AssignStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpShrAssgin, %v\n", s)
 	}
 	rv := m.PopValue() // only one.

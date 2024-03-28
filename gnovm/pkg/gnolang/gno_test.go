@@ -6,9 +6,17 @@ import (
 	"reflect"
 	"testing"
 	"unsafe"
+	"os"
+	"strings"
+	"path/filepath"
+	"text/template"
+	"io"
+	"github.com/gnolang/gno/tm2/pkg/store"
+
 
 	// "github.com/davecgh/go-spew/spew"
 	"github.com/jaekwon/testify/assert"
+	"github.com/jaekwon/testify/require"
 )
 
 // run empty main().
@@ -160,7 +168,74 @@ func BenchmarkLoopyMain(b *testing.B) {
 		m.RunMain()
 	}
 }
+type bdataParams struct {
+	N     int
+	Param string
+}
 
+func BenchmarkBenchdata(b *testing.B) {
+	const bdDir = "./benchdata"
+	files, err := os.ReadDir(bdDir)
+	require.NoError(b, err)
+	for _, file := range files {
+		// Read file and parse template.
+		bcont, err := os.ReadFile(filepath.Join(bdDir, file.Name()))
+		cont := string(bcont)
+		require.NoError(b, err)
+		tpl, err := template.New("").Parse(cont)
+		require.NoError(b, err)
+
+		// Determine parameters.
+		const paramString = "// param: "
+		var params []string
+		pos := strings.Index(cont, paramString)
+		if pos >= 0 {
+			paramsRaw := strings.SplitN(cont[pos+len(paramString):], "\n", 2)[0]
+			params = strings.Fields(paramsRaw)
+		} else {
+			params = []string{""}
+		}
+
+		for _, param := range params {
+			name := file.Name()
+			if param != "" {
+				name += "_param:" + param
+			}
+			b.Run(name, func(b *testing.B) {
+				// Gen template with N and param.
+				var buf bytes.Buffer
+				require.NoError(b, tpl.Execute(&buf, bdataParams{
+					N:     b.N,
+					Param: param,
+				}))
+
+				// Set up machine.
+				m := NewMachineWithOptions(MachineOptions{
+									PkgPath:    "main",
+									Output:     io.Discard,
+									VMGasMeter: noopGasMeter{},
+				})
+				n := MustParseFile("main.go", buf.String())
+				m.RunFiles(n)
+
+				b.ResetTimer()
+				m.RunMain()
+			})
+		}
+	}
+}
+
+
+
+type noopGasMeter struct{}
+
+func (noopGasMeter) GasConsumed() store.Gas        { return 0 }
+func (noopGasMeter) GasConsumedToLimit() store.Gas { return 0 }
+func (noopGasMeter) Limit() store.Gas              { return 1 << 32 }
+func (noopGasMeter) Remaining() store.Gas          { return 1 << 32 }
+func (noopGasMeter) ConsumeGas(store.Gas, string)  {}
+func (noopGasMeter) IsPastLimit() bool             { return false }
+func (noopGasMeter) IsOutOfGas() bool              { return false }
 // ----------------------------------------
 // Unsorted
 

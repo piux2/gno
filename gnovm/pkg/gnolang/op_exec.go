@@ -67,7 +67,7 @@ func (m *Machine) doOpExec(op Op) {
 			m.Benchmark = true
 		}
 	}
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU&&op == OpExec {
 		log.Printf("benchmark.OpExec, %v, %v\n", s, op)
 	}
 
@@ -92,12 +92,12 @@ func (m *Machine) doOpExec(op Op) {
 			// continue onto exec stmt.
 			bs.Active = next
 			s = next
-			if bm.OpCodeDetails && bm.Start {
+			if bm.OpCodeDetails && bm.StartCPU {
 				log.Printf("benchmark.OpBody, %v\n", s)
 			}
 			goto EXEC_SWITCH
 		} else {
-			if bm.OpCodeDetails && bm.Start {
+			if bm.OpCodeDetails && bm.StartCPU {
 				log.Printf("benchmark.OpBody, %v\n", s)
 			}
 			m.ForcePopOp()
@@ -132,7 +132,7 @@ func (m *Machine) doOpExec(op Op) {
 			// continue onto exec stmt.
 			bs.Active = next
 			s = next
-			if bm.OpCodeDetails && bm.Start {
+			if bm.OpCodeDetails && bm.StartCPU {
 				log.Printf("benchmark.OpForLoop, %v\n", s)
 			}
 			goto EXEC_SWITCH
@@ -154,7 +154,7 @@ func (m *Machine) doOpExec(op Op) {
 				// or uh...
 				bs.Active = next
 				s = next
-				if bm.OpCodeDetails && bm.Start {
+				if bm.OpCodeDetails && bm.StartCPU {
 					log.Printf("benchmark.OpForLoop, Post %v\n", s)
 				}
 				goto EXEC_SWITCH
@@ -230,7 +230,7 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
-				if bm.OpCodeDetails && bm.Start {
+				if bm.OpCodeDetails && bm.StartCPU {
 					if op == OpRangeIter {
 						log.Printf("benchmark.OpRangeIter, %v\n", s)
 					} else {
@@ -259,7 +259,7 @@ func (m *Machine) doOpExec(op Op) {
 					bs.ListIndex++
 					bs.NextBodyIndex = -1
 					bs.Active = nil
-					if bm.OpCodeDetails && bm.Start {
+					if bm.OpCodeDetails && bm.StartCPU {
 						if op == OpRangeIter {
 							log.Printf("benchmark.OpRangeIter, %v\n", s)
 						} else {
@@ -338,7 +338,7 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
-				if bm.OpCodeDetails && bm.Start {
+				if bm.OpCodeDetails && bm.StartCPU {
 					log.Printf("benchmark.OpRangeIterString, %v\n", s)
 				}
 				goto EXEC_SWITCH
@@ -367,7 +367,7 @@ func (m *Machine) doOpExec(op Op) {
 					bs.StrIndex += size
 					bs.NextBodyIndex = -1
 					bs.Active = nil
-					if bm.OpCodeDetails && bm.Start {
+					if bm.OpCodeDetails && bm.StartCPU {
 						log.Printf("benchmark.OpRangeIterString, %v\n", s)
 					}
 					return // redo doOpExec:*bodyStmt
@@ -437,7 +437,7 @@ func (m *Machine) doOpExec(op Op) {
 				// continue onto exec stmt.
 				bs.Active = next
 				s = next // switch on bs.Active
-				if bm.OpCodeDetails && bm.Start {
+				if bm.OpCodeDetails && bm.StartCPU {
 					log.Printf("benchmark.OpRangeIterMap, %v\n", s)
 				}
 				goto EXEC_SWITCH
@@ -468,7 +468,7 @@ func (m *Machine) doOpExec(op Op) {
 					bs.ListIndex++
 					bs.NextBodyIndex = -1
 					bs.Active = nil
-					if bm.OpCodeDetails && bm.Start {
+					if bm.OpCodeDetails && bm.StartCPU {
 						log.Printf("benchmark.OpRangeIterMap, %v\n", s)
 					}
 					return // redo doOpExec:*bodyStmt
@@ -838,7 +838,7 @@ EXEC_SWITCH:
 
 func (m *Machine) doOpIfCond() {
 	is := m.PopStmt().(*IfStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpIfCond, %v\n", is)
 	}
 	b := m.LastBlock()
@@ -880,7 +880,7 @@ func (m *Machine) doOpIfCond() {
 func (m *Machine) doOpTypeSwitch() {
 	ss := m.PopStmt().(*SwitchStmt)
 	xv := m.PopValue()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpTypeSwitch, %v, %v\n", ss, xv)
 	}
 
@@ -966,7 +966,7 @@ func (m *Machine) doOpTypeSwitch() {
 
 func (m *Machine) doOpSwitchClause() {
 	ss := m.PeekStmt1().(*SwitchStmt)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSwitchClause, %v\n", ss)
 	}
 	// tv := m.PeekValue(1) // switch tag value
@@ -1015,7 +1015,7 @@ func (m *Machine) doOpSwitchClauseCase() {
 	cv := m.PopValue()   // switch case value
 	tv := m.PeekValue(1) // switch tag value
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSwitchClauseCase, %v | %v\n", cv, tv)
 	}
 

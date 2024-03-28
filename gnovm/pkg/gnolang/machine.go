@@ -233,7 +233,8 @@ func (m *Machine) RunMemPackage(memPkg *std.MemPackage, save bool) (*PackageNode
 	defer func() {
 		bm.StopMeasurement(0)
 		// XXX: current msg are executed in sequence
-		bm.Start = false    // reset the measurement
+		bm.StartCPU = false    // reset the measurement
+		bm.StartStore = false
 		m.Benchmark = false // reset benchmark flag on the machine.
 	}()
 
@@ -242,7 +243,12 @@ func (m *Machine) RunMemPackage(memPkg *std.MemPackage, save bool) (*PackageNode
 
 	if measure {
 		m.Benchmark = true // turn on benchmark
-		bm.Start = true
+		if bm.IsCPU() {
+			bm.StartCPU = true
+		}
+		if bm.IsStore() {
+			bm.StartStore = true
+		}
 	}
 	// parse files.
 	files := ParseMemPackage(memPkg)
@@ -946,10 +952,13 @@ const GasFactorCpu int64 = 1
 // "CPU" steps.
 
 func (m *Machine) incrCPU(cycles int64) {
-	if m.VMGasMeter != nil {
-		gasCpu := overflow.Mul64p(cycles, GasFactorCpu)
-		m.VMGasMeter.ConsumeGas(gasCpu, "CpuCycles")
-	}
+
+		if m.VMGasMeter != nil {
+			gasCpu := overflow.Mul64p(cycles, GasFactorCpu)
+			m.VMGasMeter.ConsumeGas(gasCpu, "CpuCycles")
+		//m.VMGasMeter.ConsumeGas(cycles, "CpuCycles")
+		}
+
 
 	m.Cycles += cycles
 	if m.MaxCycles != 0 && m.Cycles > m.MaxCycles {
@@ -1103,19 +1112,19 @@ func (m *Machine) Run() {
 	}
 	// Telemetry End
 
-	var measure bool
-	for {
-		measure = bm.Enabled() &&
-			(bm.Entry == bm.KEEPER_CALL || bm.Entry == bm.KEEPER_ADDPKG) &&
-			m.Benchmark == true // For Keeper_call, AFTER the first OpExec executed in doOpExec, we turn on the benchmark
-		if measure {
-			// we set Benchmark Start flag at benchmark package level instead of machine instance level (machine.benchmark.start)because
-			// the instrument code does not have have reference to machine instance in gnostore
-			// TODO: it may make more sense to add benchmark start flag and pass it in gnostore  so
-			// that we can manage the benchmark flag with in a machine instance.
+  measureCPU := bm.Enabled() && bm.IsCPU()
+	measureStore := bm.Enabled() && bm.IsStore()
+	entry  := bm.Entry == bm.KEEPER_CALL || bm.Entry == bm.KEEPER_ADDPKG
 
-			bm.Start = true
-		}
+	for {
+		// we set Benchmark Start flag at benchmark package level instead of machine instance level (machine.benchmark.start)because
+		// the instrument code does not have have reference to machine instance in gnostore
+		// TODO: it may make more sense to add benchmark start flag and pass it in gnostore  so
+		// that we can manage the benchmark flag with in a machine instance.
+
+		bm.StartCPU =measureCPU && entry &&	m.Benchmark == true // For Keeper_call, AFTER the first OpExec executed in doOpExec, we turn on the benchmark
+    bm.StartStore =measureStore && entry &&	m.Benchmark == true
+
 		op := m.PopOp()
 		// Telemetry Start
 		if telemetry.TracesEnabled() && traces.IsTraceOp() { // avoid generating too much data
@@ -1130,7 +1139,7 @@ func (m *Machine) Run() {
 		}
 		// Telemetry End
 
-		if measure {
+		if bm.StartCPU {
 			bm.StartMeasurement(bm.VMOpCode(byte(op)))
 		}
 		// TODO: this can be optimized manually, even into tiers.
@@ -1138,12 +1147,12 @@ func (m *Machine) Run() {
 		/* Control operators */
 		case OpHalt:
 			m.incrCPU(OpCPUHalt)
-			if measure {
+			if bm.StartCPU{
 				if bm.OpCodeDetails {
 					log.Println("benchmark.OpHalt")
 				}
-				bm.StopMeasurement(0)
-				bm.Start = false // reset the measurement
+				bm.StopMeasurement(0) // reset the measurement
+				bm.StartCPU = false // fully stop the benchmark
 			}
 			return
 		case OpNoop:
@@ -1462,7 +1471,7 @@ func (m *Machine) Run() {
 		default:
 			panic(fmt.Sprintf("unexpected opcode %s", op.String()))
 		}
-		if measure {
+		if bm.StartCPU{
 			bm.StopMeasurement(0)
 		}
 	}
@@ -1656,7 +1665,7 @@ func (m *Machine) PopCopyValues(n int) []TypedValue {
 
 // Decrements NumValues by number of last results.
 func (m *Machine) PopResults() {
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Println("benchmark.OpPopResults")
 	}
 
@@ -1692,7 +1701,7 @@ func (m *Machine) PopBlock() (b *Block) {
 	}
 	numBlocks := len(m.Blocks)
 	b = m.Blocks[numBlocks-1]
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpPopBlock, %v\n", b)
 	}
 	m.Blocks = m.Blocks[:numBlocks-1]
@@ -1799,7 +1808,7 @@ func (m *Machine) PopFrame() Frame {
 
 func (m *Machine) PopFrameAndReset() {
 	fr := m.PopFrame()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpPopFrameAndReset, %v\n", fr)
 	}
 	m.NumOps = fr.NumOps

@@ -24,8 +24,8 @@ type exporter struct {
 	file *os.File
 }
 
-func (e *exporter) export(opCode OpCode, elapsedTime time.Duration, size uint32) {
-	buf := []byte{opCode[0], opCode[1], 0, 0, 0, 0, 0, 0, 0, 0}
+func (e *exporter) export(code Code, elapsedTime time.Duration, size uint32) {
+	buf := []byte{code[0], code[1], 0, 0, 0, 0, 0, 0, 0, 0}
 	binary.LittleEndian.PutUint32(buf[2:], uint32(elapsedTime))
 	binary.LittleEndian.PutUint32(buf[6:], size)
 	_, err := e.file.Write(buf)

@@ -16,6 +16,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+//	"log"
+//	bm "github.com/gnolang/gno/benchmarking"
 )
 
 // Package "pkg" exists So dependencies can create Packages.
@@ -77,7 +79,20 @@ func MarshalAny(o interface{}) ([]byte, error) {
 }
 
 func MustMarshalAny(o interface{}) []byte {
-	return gcdc.MustMarshalAny(o)
+	/*
+	var size uint32
+		if bm.StartStore {
+			bm.StartMeasurement(bm.StoreCode(bm.AminoMarshal))
+			defer func(){
+				bm.StopMeasurement(size)
+				log.Printf("benchmark.AminoMarshal, %d\n", size)
+			}()
+		}
+		*/
+		bz := gcdc.MustMarshalAny(o)
+		//size = uint32(len(bz))
+
+	return bz
 }
 
 func MarshalAnySized(o interface{}) ([]byte, error) {
@@ -97,6 +112,17 @@ func Unmarshal(bz []byte, ptr interface{}) error {
 }
 
 func MustUnmarshal(bz []byte, ptr interface{}) {
+	/*
+	var size uint32
+		if bm.StartStore {
+			bm.StartMeasurement(bm.StoreCode(bm.AminoUnMarshal))
+			defer func(){
+				bm.StopMeasurement(size)
+				log.Printf("benchmark.AminoUnMarshal, %d\n", size)
+			}()
+		}
+	size = uint32(len(bz))
+	*/
 	gcdc.MustUnmarshal(bz, ptr)
 }
 

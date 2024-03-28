@@ -763,40 +763,44 @@ func OpPanic() {
 OpEval, []interface {  }{(const (1 int)), (const ("hello" string)), (const (1 float64)), interface {  }}
 OpEval, []interface {  }
 OpEval, interface {  }
+OpInterfaceType, interface {  }
+OpSliceType, []interface {  }
+OpCompositeLit, []interface {  }{(const (1 int)), (const ("hello" string)), (const (1 float64)), interface {  }}
 OpEval, (const (1 int))
 OpEval, (const ("hello" string))
 OpEval, (const (1 float64))
 OpEval, interface {  }
+OpInterfaceType, interface {  }
+OpSliceLit, []interface {  }{(const (1 int)), (const ("hello" string)), (const (1 float64)), interface {  }}
 OpDefine, values<VPBlock(1,0)> := []interface {  }{(const (1 int)), (const ("hello" string)), (const (1 float64)), interface {  }}
-OpExec, bodyStmt[0/0/1]=for _<VPBlock(0,0)>, v<VPBlock(1,0)> := range values<VPBlock(2,0)> { switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  } }
+OpBody, for _<VPBlock(0,0)>, v<VPBlock(1,0)> := range values<VPBlock(2,0)> { switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  } }
 OpEval, values<VPBlock(2,0)>
-OpExec, bodyStmt[0/0/-2]=(init)
+OpRangeIter, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }
 OpEval, v<VPBlock(2,0)>
 OpTypeSwitch, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }, (1 int)
-OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0xc00946c960,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0xc00946c780)
+OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0x1400bbbc780,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0x1400bbbc5a0)
 OpPopFrameAndReset, [FRAME LABEL:  4/2/0/3/3]
-OpExec, bodyStmt[4/0/1]=(end)
-OpExec, bodyStmt[4/1/-1]=(init)
+OpRangeIter, bodyStmt[4/1/-1]=(init)
+OpRangeIter, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }
 OpEval, v<VPBlock(2,0)>
 OpTypeSwitch, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }, ("hello" string)
-OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0xc00946cb40,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0xc00946c780)
+OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0x1400bbbc960,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0x1400bbbc5a0)
 OpPopFrameAndReset, [FRAME LABEL:  4/2/0/3/3]
-OpExec, bodyStmt[4/1/1]=(end)
-OpExec, bodyStmt[4/2/-1]=(init)
+OpRangeIter, bodyStmt[4/2/-1]=(init)
+OpRangeIter, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }
 OpEval, v<VPBlock(2,0)>
 OpTypeSwitch, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }, (1 float64)
-OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0xc00946cd20,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0xc00946c780)
+OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0x1400bbbcb40,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0x1400bbbc5a0)
 OpPopFrameAndReset, [FRAME LABEL:  4/2/0/3/3]
-OpExec, bodyStmt[4/2/1]=(end)
-OpExec, bodyStmt[4/3/-1]=(init)
+OpRangeIter, bodyStmt[4/3/-1]=(init)
+OpRangeIter, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }
 OpEval, v<VPBlock(2,0)>
-OpTypeSwitch, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }, (typeval{interface{} (0xc00cfd6780)} type{})
-OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0xc00946cf00,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0xc00946c780)
+OpTypeSwitch, switch v<VPBlock(2,0)> { case (const-type int): ; case (const-type string): ; case (const-type float64): ; default:  }, (typeval{interface{} (0x1400bba9130)} type{})
+OpPopBlock, Block(ID:0000000000000000000000000000000000000000:0,Addr:0x1400bbbcd20,Source:switch v<VPBlock(2,0)> { case (c...,Parent:0x1400bbbc5a0)
 OpPopFrameAndReset, [FRAME LABEL:  4/2/0/3/3]
-OpExec, bodyStmt[4/3/1]=(end)
 OpPopFrameAndReset, [FRAME LABEL:  3/1/0/2/2]
-OpExec, bodyStmt[0/0/2]=(end)
-OpExec, return
+OpBody, bodyStmt[0/0/2]=(end)
+OpExec, return, OpExec
 OpReturnFromBlock, [FRAME FUNC:OpTypeSwitch RECV:(undefined) (0 args) 1/0/0/0/1 LASTPKG:main LASTRLM:Realm(nil)]
 OpHalt
 */

@@ -20,7 +20,7 @@ func (m *Machine) doOpIndex1() {
 	iv := m.PopValue()   // index
 	xv := m.PeekValue(1) // x
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpIndex1, %v\n", xv)
 	}
 
@@ -53,7 +53,7 @@ func (m *Machine) doOpIndex2() {
 	iv := m.PeekValue(1) // index
 	xv := m.PeekValue(2) // x
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpIndex2, %v\n", xv)
 	}
 
@@ -90,7 +90,7 @@ func (m *Machine) doOpIndex2() {
 
 func (m *Machine) doOpSelector() {
 	sx := m.PopExpr().(*SelectorExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSelector, %v\n", sx)
 	}
 
@@ -102,7 +102,7 @@ func (m *Machine) doOpSelector() {
 
 func (m *Machine) doOpSlice() {
 	sx := m.PopExpr().(*SliceExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSlice, %v\n", sx)
 	}
 
@@ -161,7 +161,7 @@ func (m *Machine) doOpSlice() {
 // deref, but the result is a pointer-to type.
 func (m *Machine) doOpStar() {
 	xv := m.PopValue()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpStar, %v\n", xv)
 	}
 
@@ -203,7 +203,7 @@ func (m *Machine) doOpStar() {
 func (m *Machine) doOpRef() {
 	rx := m.PopExpr().(*RefExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpRef, %v\n", rx)
 	}
 
@@ -238,7 +238,7 @@ func (m *Machine) doOpTypeAssert1() {
 
 	if t.Kind() == InterfaceKind { // is interface assert
 
-		if bm.OpCodeDetails && bm.Start {
+		if bm.OpCodeDetails && bm.StartCPU {
 			log.Printf("benchmark.OpTypeAssert1, interface %v\n", xv)
 		}
 
@@ -283,7 +283,7 @@ func (m *Machine) doOpTypeAssert1() {
 			panic("should not happen")
 		}
 	} else { // is concrete assert
-		if bm.OpCodeDetails && bm.Start {
+		if bm.OpCodeDetails && bm.StartCPU {
 			log.Printf("benchmark.OpTypeAssert1, concrete type %v\n", xv)
 		}
 		tid := t.TypeID()
@@ -316,7 +316,7 @@ func (m *Machine) doOpTypeAssert2() {
 
 	if t.Kind() == InterfaceKind { // is interface assert
 
-		if bm.OpCodeDetails && bm.Start {
+		if bm.OpCodeDetails && bm.StartCPU {
 			log.Printf("benchmark.OpTypeAssert2, interface %v\n", xv)
 		}
 
@@ -354,7 +354,7 @@ func (m *Machine) doOpTypeAssert2() {
 			panic("should not happen")
 		}
 	} else { // is concrete assert
-		if bm.OpCodeDetails && bm.Start {
+		if bm.OpCodeDetails && bm.StartCPU {
 			log.Printf("benchmark.OpTypeAssert2, concrete type %v\n", xv)
 		}
 		tid := t.TypeID()
@@ -377,7 +377,7 @@ func (m *Machine) doOpTypeAssert2() {
 func (m *Machine) doOpCompositeLit() {
 	// composite lit expr
 	x := m.PeekExpr(1).(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpCompositeLit, %v\n", x)
 	}
 
@@ -470,7 +470,7 @@ func (m *Machine) doOpCompositeLit() {
 func (m *Machine) doOpArrayLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpArrayLit, %v\n", x)
 	}
 	ne := len(x.Elts)
@@ -532,7 +532,7 @@ func (m *Machine) doOpArrayLit() {
 func (m *Machine) doOpSliceLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSliceLit, %v\n", x)
 	}
 	el := len(x.Elts)
@@ -561,7 +561,7 @@ func (m *Machine) doOpSliceLit() {
 func (m *Machine) doOpSliceLit2() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSliceLit2, %v\n", x)
 	}
 	el := len(x.Elts)
@@ -613,7 +613,7 @@ func (m *Machine) doOpSliceLit2() {
 
 func (m *Machine) doOpMapLit() {
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpMapLit, %v\n", x)
 	}
 	ne := len(x.Elts)
@@ -655,7 +655,7 @@ func (m *Machine) doOpMapLit() {
 func (m *Machine) doOpStructLit() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpStructLit, %v\n", x)
 	}
 	el := len(x.Elts) // may be incomplete
@@ -742,7 +742,7 @@ func (m *Machine) doOpStructLit() {
 func (m *Machine) doOpFuncLit() {
 	x := m.PopExpr().(*FuncLitExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpFuncLit, %v\n", x)
 	}
 	ft := m.PopValue().V.(TypeValue).Type.(*FuncType)
@@ -767,7 +767,7 @@ func (m *Machine) doOpConvert() {
 	xv := m.PopValue()
 	t := m.PopValue().GetType()
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpConvert, Value: %v | Type: %v\n", xv, t)
 	}
 

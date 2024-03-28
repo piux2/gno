@@ -1290,7 +1290,7 @@ func (x *PackageNode) DefineGoNativeValue(n Name, nv interface{}) {
 func (m *Machine) doOpArrayLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpArrayLitGoNative, %v\n", x)
 	}
 	el := len(x.Elts) // may be incomplete
@@ -1331,7 +1331,7 @@ func (m *Machine) doOpArrayLitGoNative() {
 func (m *Machine) doOpSliceLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSliceLitGoNative, %v\n", x)
 	}
 	el := len(x.Elts) // may be incomplete
@@ -1374,7 +1374,7 @@ func (m *Machine) doOpStructLitGoNative() {
 	// assess performance TODO
 	x := m.PopExpr().(*CompositeLitExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpStructLitGoNative, %v\n", x)
 	}
 
@@ -1422,7 +1422,7 @@ func (m *Machine) doOpCallGoNative() {
 	fr := m.LastFrame()
 	fv := fr.GoFunc
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpCallGoNative, %v\n", fv)
 	}
 

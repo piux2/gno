@@ -10,7 +10,7 @@ import (
 
 func (m *Machine) doOpFieldType() {
 	x := m.PopExpr().(*FieldTypeExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpFieldType, %v\n", x)
 	}
 
@@ -33,7 +33,7 @@ func (m *Machine) doOpFieldType() {
 
 func (m *Machine) doOpArrayType() {
 	x := m.PopExpr().(*ArrayTypeExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpArrayType, %v\n", x)
 	}
 	t := &ArrayType{}
@@ -70,7 +70,7 @@ func (m *Machine) doOpArrayType() {
 func (m *Machine) doOpSliceType() {
 	x := m.PopExpr().(*SliceTypeExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpSliceType, %v\n", x)
 	}
 	tv := m.PeekValue(1) // re-use as result.
@@ -86,7 +86,7 @@ func (m *Machine) doOpSliceType() {
 
 func (m *Machine) doOpFuncType() {
 	x := m.PopExpr().(*FuncTypeExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpFuncType, %v\n", x)
 	}
 	// Allocate space for data.
@@ -114,7 +114,7 @@ func (m *Machine) doOpFuncType() {
 func (m *Machine) doOpMapType() {
 	vtv := m.PopValue()
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpMapType, %v\n", vtv)
 	}
 
@@ -131,7 +131,7 @@ func (m *Machine) doOpMapType() {
 
 func (m *Machine) doOpStructType() {
 	x := m.PopExpr().(*StructTypeExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpStructType, %v\n", x)
 	}
 
@@ -158,7 +158,7 @@ func (m *Machine) doOpStructType() {
 
 func (m *Machine) doOpInterfaceType() {
 	x := m.PopExpr().(*InterfaceTypeExpr)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpInterfaceType, %v\n", x)
 	}
 
@@ -185,7 +185,7 @@ func (m *Machine) doOpInterfaceType() {
 func (m *Machine) doOpChanType() {
 	x := m.PopExpr().(*ChanTypeExpr)
 
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpChanType, %v\n", x)
 	}
 
@@ -202,7 +202,7 @@ func (m *Machine) doOpChanType() {
 
 func (m *Machine) doOpMaybeNativeType() {
 	tv := m.PeekValue(1) // re-use as result.
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpMaybeNativeType, %v\n", tv)
 	}
 
@@ -220,7 +220,7 @@ func (m *Machine) doOpMaybeNativeType() {
 // already swapped for *ConstExpr in the preprocessor.  If not, panics.
 func (m *Machine) doOpStaticTypeOf() {
 	x := m.PopExpr()
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpStaticTypeOf, %v\n", x)
 	}
 

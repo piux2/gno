@@ -16,7 +16,7 @@ import (
 
 func (m *Machine) doOpEval() {
 	x := m.PeekExpr(1)
-	if bm.OpCodeDetails && bm.Start {
+	if bm.OpCodeDetails && bm.StartCPU {
 		log.Printf("benchmark.OpEval, %v\n", x)
 	}
 	if debug {

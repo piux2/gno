@@ -2,6 +2,7 @@ package gnolang
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -210,12 +211,23 @@ func (ds *defaultStore) SetCachePackage(pv *PackageValue) {
 
 // Some atomic operation.
 func (ds *defaultStore) GetPackageRealm(pkgPath string) (rlm *Realm) {
+	var size uint32
+
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGetPackage))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGetPackage, %d\n", size)
+		}()
+	}
+
 	oid := ObjectIDFromPkgPath(pkgPath)
 	key := backendRealmKey(oid)
 	bz := ds.baseStore.Get([]byte(key))
 	if bz == nil {
 		return nil
 	}
+	size = uint32(len(bz))
 	amino.MustUnmarshal(bz, &rlm)
 	if debug {
 		if rlm.ID != oid.PkgID {
@@ -228,9 +240,21 @@ func (ds *defaultStore) GetPackageRealm(pkgPath string) (rlm *Realm) {
 
 // An atomic operation to set the package realm info (id counter etc).
 func (ds *defaultStore) SetPackageRealm(rlm *Realm) {
+	var size uint32
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreSetPackage))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreSetPackage, %d\n", size)
+		}()
+	}
+
+
 	oid := ObjectIDFromPkgPath(rlm.Path)
 	key := backendRealmKey(oid)
 	bz := amino.MustMarshal(rlm)
+	size = uint32(len(bz))
+
 	ds.baseStore.Set([]byte(key), bz)
 }
 
@@ -240,7 +264,7 @@ func (ds *defaultStore) SetPackageRealm(rlm *Realm) {
 // all []TypedValue types and TypeValue{} types to be
 // loaded (non-ref) types.
 func (ds *defaultStore) GetObject(oid ObjectID) Object {
-	if bm.Start {
+	if bm.StartCPU && !bm.StartStore{
 		bm.Pause()
 		defer bm.Resume()
 	}
@@ -273,11 +297,24 @@ func (ds *defaultStore) GetObjectSafe(oid ObjectID) Object {
 // loads and caches an object.
 // CONTRACT: object isn't already in the cache.
 func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
+
+	var size uint32
+
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGetObject))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGetObject, %d\n", size)
+		}()
+	}
+
 	key := backendObjectKey(oid)
 	hashbz := ds.baseStore.Get([]byte(key))
 	if hashbz != nil {
 		hash := hashbz[:HashSize]
 		bz := hashbz[HashSize:]
+		size = uint32(len(hashbz))
+
 		var oo Object
 		ds.alloc.AllocateAmino(int64(len(bz)))
 		amino.MustUnmarshal(bz, &oo)
@@ -298,10 +335,21 @@ func (ds *defaultStore) loadObjectSafe(oid ObjectID) Object {
 // NOTE: unlike GetObject(), SetObject() is also used to persist updated
 // package values.
 func (ds *defaultStore) SetObject(oo Object) {
-	if bm.Start {
+	if bm.StartCPU && !bm.StartStore {
 		bm.Pause()
 		defer bm.Resume()
 	}
+
+	var size uint32
+
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreSetObject))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreSetObject, %d\n", size)
+		}()
+	}
+
 	oid := oo.GetObjectID()
 	// replace children/fields with Ref.
 	o2 := copyValueWithRefs(nil, oo)
@@ -320,6 +368,7 @@ func (ds *defaultStore) SetObject(oo Object) {
 		copy(hashbz, hash.Bytes())
 		copy(hashbz[HashSize:], bz)
 		ds.baseStore.Set([]byte(key), hashbz)
+		size = uint32(len(hashbz))
 	}
 	// save object to cache.
 	if debug {
@@ -356,7 +405,7 @@ func (ds *defaultStore) SetObject(oo Object) {
 }
 
 func (ds *defaultStore) DelObject(oo Object) {
-	if bm.Start {
+	if bm.StartCPU && !bm.StartStore {
 		bm.Pause()
 		defer bm.Resume()
 	}
@@ -389,14 +438,28 @@ func (ds *defaultStore) GetType(tid TypeID) Type {
 }
 
 func (ds *defaultStore) GetTypeSafe(tid TypeID) Type {
+
+
 	// check cache.
 	if tt, exists := ds.cacheTypes[tid]; exists {
 		return tt
 	}
+
+	var size uint32
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGetType))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGetType, %d\n", size)
+		}()
+	}
+
+
 	// check backend.
 	if ds.baseStore != nil {
 		key := backendTypeKey(tid)
 		bz := ds.baseStore.Get([]byte(key))
+		size = uint32(len(bz))
 		if bz != nil {
 			var tt Type
 			amino.MustUnmarshal(bz, &tt)
@@ -440,11 +503,22 @@ func (ds *defaultStore) SetType(tt Type) {
 			return
 		}
 	}
+	var size uint32
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreSetType))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreSetType, %d\n", size)
+		}()
+	}
+
+
 	// save type to backend.
 	if ds.baseStore != nil {
 		key := backendTypeKey(tid)
 		tcopy := copyTypeWithRefs(tt)
 		bz := amino.MustMarshalAny(tcopy)
+		size = uint32(len(bz))
 		ds.baseStore.Set([]byte(key), bz)
 	}
 	// save type to cache.
@@ -464,10 +538,21 @@ func (ds *defaultStore) GetBlockNodeSafe(loc Location) BlockNode {
 	if bn, exists := ds.cacheNodes[loc]; exists {
 		return bn
 	}
+
+	var size uint32
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGetBlockNode))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGetBlockNode, %d\n", size)
+		}()
+	}
+
 	// check backend.
 	if ds.baseStore != nil {
 		key := backendNodeKey(loc)
 		bz := ds.baseStore.Get([]byte(key))
+		size = uint32(len(bz))
 		if bz != nil {
 			var bn BlockNode
 			amino.MustUnmarshal(bz, &bn)
@@ -485,7 +570,7 @@ func (ds *defaultStore) GetBlockNodeSafe(loc Location) BlockNode {
 }
 
 func (ds *defaultStore) SetBlockNode(bn BlockNode) {
-	if bm.Start {
+	if bm.StartCPU && !bm.StartStore {
 		bm.Pause()
 		defer bm.Resume()
 	}
@@ -539,6 +624,15 @@ func (ds *defaultStore) incGetPackageIndexCounter() uint64 {
 }
 
 func (ds *defaultStore) AddMemPackage(memPkg *std.MemPackage) {
+	var size uint32
+	if bm.StartStore {
+		bm.StartMeasurement(bm.StoreCode(bm.StoreGetBlockNode))
+		defer func(){
+			bm.StopMeasurement(size)
+			log.Printf("benchmark.StoreGetBlockNode, %d\n", size)
+		}()
+	}
+
 	memPkg.Validate() // NOTE: duplicate validation.
 	ctr := ds.incGetPackageIndexCounter()
 	idxkey := []byte(backendPackageIndexKey(ctr))
@@ -546,6 +640,7 @@ func (ds *defaultStore) AddMemPackage(memPkg *std.MemPackage) {
 	ds.baseStore.Set(idxkey, []byte(memPkg.Path))
 	pathkey := []byte(backendPackagePathKey(memPkg.Path))
 	ds.iavlStore.Set(pathkey, bz)
+	
 }
 
 func (ds *defaultStore) GetMemPackage(path string) *std.MemPackage {

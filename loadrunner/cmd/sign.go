@@ -21,7 +21,7 @@ import (
 const (
 	ChainID = "dev"
 	numMsgs = 5 // number messages per tx
-	gas = 100
+	gas = 1000000
 	fee = 5
 )
 
@@ -141,8 +141,8 @@ func sign(args []string) error {
 
 func newTxs() []std.Tx {
 	// TODO: max gas, max tx size and max msg size
-	 pkgPath := "gno.land/r/x/benchmark/load"
-	// pkgPath := "gno.land/r/load"
+	pkgPath := "gno.land/r/x/benchmark/load"
+	//pkgPath := "gno.land/r/load"
 	fn := "AddPost"
 	//args := []string{"hello", "world"}
 
