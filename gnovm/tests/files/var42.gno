@@ -9,3 +9,6 @@ func main() {
 
 // Error:
 // main/var42.gno:4:5-10: invalid recursive value: A -> A
+
+// TypeCheckError:
+// main/var42.gno:4:5: initialization cycle: A refers to itself

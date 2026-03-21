@@ -135,7 +135,7 @@ func PredefineFileSet(store Store, pn *PackageNode, fset *FileSet) {
 						}
 					}
 				}
-				split := make([]Decl, len(vd.NameExprs))
+				split := make([]Decl, 0, len(vd.NameExprs))
 				for j := range vd.NameExprs {
 					part := &ValueDecl{
 						NameExprs: NameExprs{{
@@ -151,7 +151,7 @@ func PredefineFileSet(store Store, pn *PackageNode, fset *FileSet) {
 					if iota_ != nil {
 						part.SetAttribute(ATTR_IOTA, iota_)
 					}
-					split[j] = part
+					split = append(split, part)
 				}
 				// Apply the split to fn.Decls BEFORE calling predefineRecursively,
 				// so that GetDeclFor resolves each split name to its own individual
