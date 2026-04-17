@@ -4828,8 +4828,11 @@ func predefineRecursively(store Store, last BlockNode, d Decl) bool {
 func predefineRecursively2(store Store, last BlockNode, d Decl, stack []Name, defining map[Name]struct{}, direct bool) bool {
 	pkg := packageOf(last)
 
-	// NOTE: predefine fileset breaks up circular definitions like
-	// `var a, b, c = 1, a, b` which is only legal at the file level.
+	// NOTE: PredefineFileSet splits multi-value decls like `var a, b = c, d`
+	// into individual decls before calling this function, so that GetDeclFor
+	// resolves each name to its own standalone decl. Without the split,
+	// all names in the original multi-value decl would be added to `defining`,
+	// causing false cycle detection for valid DAG dependencies.
 	for _, dn := range d.GetDeclNames() {
 		if isUverseName(dn) {
 			panic(fmt.Sprintf(
